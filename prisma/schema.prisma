@@ -1,0 +1,234 @@
+// NOTELOFT - Simple Schema
+// Clean authentication system
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUM VALUES (represented as strings in SQLite)
+// ============================================
+//
+// SQLite connector does not support native enums. To keep the domain
+// vocabulary consistent we store enum values as text columns and enforce
+// allowed values at the application layer (see zod schemas in lib/validation).
+// The allowed values are:
+// PageType: GENERIC | SEMESTER_DASHBOARD | COURSE_NOTES | EXAM_REVISION | STUDY_TASKS
+// TaskStatus: NOT_STARTED | IN_PROGRESS | DONE
+// TaskType: ASSIGNMENT | REVISION | READING | OTHER
+// TaskPriority: LOW | NORMAL | HIGH
+// TimetableSlotType: LECTURE | LAB | STUDY | EXAM | OTHER
+// StudySessionStatus: IN_PROGRESS | COMPLETED | CANCELLED | INTERRUPTED
+// StudySessionMood: LOW | OKAY | HIGH
+// StudySessionEventType: STARTED | PAUSED | RESUMED | ENDED | TASK_MARKED_DONE | NOTE_ADDED | INTERRUPTED
+
+// ============================================
+// USER & AUTH
+// ============================================
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String   // Hashed with bcrypt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  workspaces Workspace[]
+}
+
+// ============================================
+// CORE ENTITIES
+// ============================================
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pages            Page[]
+  courses          Course[]
+  tasks            Task[]
+  exams            Exam[]
+  timetableSlots   TimetableSlot[]
+  assessmentItems  AssessmentItem[]
+  studySessions    StudySession[]
+
+  @@index([userId])
+}
+
+model Page {
+  id          String   @id @default(cuid())
+  workspaceId String
+  parentId    String?
+  title       String
+  type        String   @default("GENERIC")
+  content     String   @default("{}")
+  isFavorite  Boolean  @default(false)
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parent       Page?     @relation("PageHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children     Page[]    @relation("PageHierarchy")
+  relatedTasks Task[]
+
+  @@index([workspaceId])
+  @@index([parentId])
+}
+
+model Course {
+  id           String   @id @default(cuid())
+  workspaceId  String
+  name         String
+  code         String
+  semesterName String
+  color        String   @default("#3B82F6")
+  credits      Int?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  workspace       Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  tasks           Task[]
+  exams           Exam[]
+  timetableSlots  TimetableSlot[]
+  assessmentItems AssessmentItem[]
+  studySessions   StudySession[]
+
+  @@index([workspaceId])
+}
+
+model Task {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  courseId      String?
+  courseLabel   String?
+  title         String
+  description   String?
+  status        String   @default("NOT_STARTED")
+  type          String   @default("OTHER")
+  priority      String   @default("NORMAL")
+  dueDate       DateTime?
+  relatedPageId String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  course      Course?   @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  relatedPage Page?     @relation(fields: [relatedPageId], references: [id], onDelete: SetNull)
+  studySessions StudySession[]
+
+  @@index([workspaceId])
+  @@index([courseId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+model Exam {
+  id          String   @id @default(cuid())
+  workspaceId String
+  courseId    String
+  title       String
+  date        DateTime
+  location    String?
+  weight      Float?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  course    Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  studySessions StudySession[]
+
+  @@index([workspaceId])
+  @@index([courseId])
+  @@index([date])
+}
+
+model TimetableSlot {
+  id          String   @id @default(cuid())
+  workspaceId String
+  courseId    String?
+  title       String
+  dayOfWeek   Int
+  startTime   String
+  endTime     String
+  type        String   @default("LECTURE")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  course    Course?   @relation(fields: [courseId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId])
+  @@index([dayOfWeek])
+}
+
+model AssessmentItem {
+  id          String   @id @default(cuid())
+  workspaceId String
+  courseId    String
+  title       String
+  score       Float?
+  maxScore    Float
+  weight      Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  course    Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([courseId])
+}
+
+model StudySession {
+  id                    String   @id @default(cuid())
+  workspaceId           String
+  courseId              String?
+  taskId                String?
+  examId                String?
+  startedAt             DateTime
+  endedAt               DateTime?
+  durationMinutes       Int?
+  plannedDurationMinutes Int?
+  status                String   @default("IN_PROGRESS")
+  notes                 String?
+  mood                  String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  course    Course?   @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  task      Task?     @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  exam      Exam?     @relation(fields: [examId], references: [id], onDelete: SetNull)
+  events    StudySessionEvent[]
+
+  @@index([workspaceId])
+  @@index([courseId])
+  @@index([taskId])
+  @@index([examId])
+}
+
+model StudySessionEvent {
+  id             String   @id @default(cuid())
+  studySessionId String
+  type           String
+  createdAt      DateTime @default(now())
+  metadata       String?
+
+  session StudySession @relation(fields: [studySessionId], references: [id], onDelete: Cascade)
+
+  @@index([studySessionId])
+}
