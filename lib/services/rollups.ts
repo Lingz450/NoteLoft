@@ -150,3 +150,124 @@ export async function getWorkspaceRollups(workspaceId: string) {
   };
 }
 
+/**
+ * Formula Support
+ * 
+ * Simple formula evaluation for computed properties.
+ */
+
+export type FormulaType = 
+  | "SUM"
+  | "AVERAGE"
+  | "COUNT"
+  | "MIN"
+  | "MAX"
+  | "DAYS_UNTIL"
+  | "IS_OVERDUE"
+  | "PERCENTAGE";
+
+export interface Formula {
+  type: FormulaType;
+  field?: string; // Field to operate on
+  field2?: string; // Second field for operations like percentage
+}
+
+/**
+ * Evaluate a formula
+ */
+export function evaluateFormula(
+  formula: Formula,
+  values: Record<string, any>
+): number | boolean | string {
+  switch (formula.type) {
+    case "SUM":
+      if (!formula.field) return 0;
+      const sumValues = Array.isArray(values[formula.field])
+        ? values[formula.field]
+        : [values[formula.field]];
+      return sumValues.reduce((sum: number, val: any) => sum + (Number(val) || 0), 0);
+
+    case "AVERAGE":
+      if (!formula.field) return 0;
+      const avgValues = Array.isArray(values[formula.field])
+        ? values[formula.field]
+        : [values[formula.field]];
+      const sum = avgValues.reduce((s: number, val: any) => s + (Number(val) || 0), 0);
+      return avgValues.length > 0 ? sum / avgValues.length : 0;
+
+    case "COUNT":
+      if (!formula.field) return 0;
+      const countValues = Array.isArray(values[formula.field])
+        ? values[formula.field]
+        : [values[formula.field]];
+      return countValues.filter((v: any) => v != null && v !== "").length;
+
+    case "MIN":
+      if (!formula.field) return 0;
+      const minValues = Array.isArray(values[formula.field])
+        ? values[formula.field]
+        : [values[formula.field]];
+      return Math.min(...minValues.map((v: any) => Number(v) || 0));
+
+    case "MAX":
+      if (!formula.field) return 0;
+      const maxValues = Array.isArray(values[formula.field])
+        ? values[formula.field]
+        : [values[formula.field]];
+      return Math.max(...maxValues.map((v: any) => Number(v) || 0));
+
+    case "DAYS_UNTIL":
+      if (!formula.field || !values[formula.field]) return 0;
+      const date = new Date(values[formula.field]);
+      const now = new Date();
+      const diff = date.getTime() - now.getTime();
+      return Math.ceil(diff / (1000 * 60 * 60 * 24));
+
+    case "IS_OVERDUE":
+      if (!formula.field || !values[formula.field]) return false;
+      const dueDate = new Date(values[formula.field]);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      dueDate.setHours(0, 0, 0, 0);
+      return dueDate < today && values.status !== "DONE";
+
+    case "PERCENTAGE":
+      if (!formula.field || !formula.field2) return 0;
+      const part = Number(values[formula.field]) || 0;
+      const total = Number(values[formula.field2]) || 1;
+      return total > 0 ? (part / total) * 100 : 0;
+
+    default:
+      return 0;
+  }
+}
+
+/**
+ * Format formula result for display
+ */
+export function formatFormulaResult(
+  result: number | boolean | string,
+  formula: Formula
+): string {
+  if (typeof result === "boolean") {
+    return result ? "Yes" : "No";
+  }
+
+  if (typeof result === "number") {
+    if (formula.type === "PERCENTAGE") {
+      return `${result.toFixed(1)}%`;
+    }
+    if (formula.type === "DAYS_UNTIL") {
+      if (result < 0) return `${Math.abs(result)} days overdue`;
+      if (result === 0) return "Today";
+      return `${result} days`;
+    }
+    if (Number.isInteger(result)) {
+      return result.toString();
+    }
+    return result.toFixed(2);
+  }
+
+  return String(result);
+}
+

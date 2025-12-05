@@ -6,9 +6,10 @@
  * Generic calendar view for any database with date fields (exams, tasks with due dates).
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/common/Card";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { Button } from "@/components/common/Button";
 
 type CalendarItem = {
   id: string;
@@ -21,13 +22,17 @@ type CalendarItem = {
 interface CalendarViewProps<T extends CalendarItem> {
   items: T[];
   onItemClick?: (item: T) => void;
+  onAddItem?: (date: Date) => void;
   renderItem?: (item: T) => React.ReactNode;
+  workspaceId?: string;
 }
 
 export function CalendarView<T extends CalendarItem>({
   items,
   onItemClick,
+  onAddItem,
   renderItem,
+  workspaceId,
 }: CalendarViewProps<T>) {
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -68,6 +73,12 @@ export function CalendarView<T extends CalendarItem>({
           {currentDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
         </h2>
         <div className="flex items-center gap-2">
+          {onAddItem && (
+            <Button size="sm" variant="outline" onClick={() => onAddItem(new Date())}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Event
+            </Button>
+          )}
           <button
             onClick={goToPreviousMonth}
             className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
