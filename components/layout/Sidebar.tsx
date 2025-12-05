@@ -270,7 +270,7 @@ export function Sidebar({ workspaceId, workspaceName, pages }: SidebarProps) {
       <div className={`border-b border-gray-200 dark:border-gray-800 ${isCollapsed ? "p-2" : "p-4"} relative flex-shrink-0`}>
         {!isCollapsed ? (
           <>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-2 pr-10">
               <div>
                 <h2 className="text-xl font-bold text-blue-600 dark:text-blue-400">NOTELOFT</h2>
                 <p className="mt-0.5 text-xs font-semibold text-gray-600 dark:text-gray-400">Student Workspace OS</p>
@@ -283,7 +283,7 @@ export function Sidebar({ workspaceId, workspaceName, pages }: SidebarProps) {
                 <Search className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               </button>
             </div>
-            <p className="text-sm font-semibold text-gray-900 dark:text-gray-200 truncate">{workspaceName}</p>
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-200 truncate pr-10">{workspaceName}</p>
           </>
         ) : (
           <div className="flex items-center justify-center">
@@ -292,7 +292,7 @@ export function Sidebar({ workspaceId, workspaceName, pages }: SidebarProps) {
         )}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className={`absolute ${isCollapsed ? "top-2 right-2" : "top-4 right-2"} p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors z-10`}
+          className={`absolute ${isCollapsed ? "top-2 right-2" : "top-4 right-4"} p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors z-10`}
           title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {isCollapsed ? (
