@@ -23,6 +23,8 @@ import {
   Users,
   Network,
   Flame,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 
@@ -65,6 +67,8 @@ export function Sidebar({ workspaceId, workspaceName, pages }: SidebarProps) {
   const pathname = usePathname();
   const [pageState, setPageState] = useState(pages);
   const [isPending, startTransition] = useTransition();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(["nav", "advanced", "favorites", "pages"]));
 
   useEffect(() => {
     setPageState(pages);
@@ -232,11 +236,26 @@ export function Sidebar({ workspaceId, workspaceName, pages }: SidebarProps) {
   }
 
   return (
-    <div className="flex h-full flex-col bg-white dark:bg-sidebar">
-      <div className="border-b border-gray-200 dark:border-gray-800 p-4">
-        <h2 className="text-xl font-bold text-blue-600 dark:text-blue-400">NOTELOFT</h2>
-        <p className="mt-1 text-xs font-semibold text-gray-600 dark:text-gray-400">Student Workspace OS</p>
-        <p className="mt-2 text-sm font-semibold text-gray-900 dark:text-gray-200">{workspaceName}</p>
+    <div className={`flex h-full flex-col bg-white dark:bg-sidebar transition-all duration-200 ${isCollapsed ? "w-16" : "w-64"}`}>
+      <div className="border-b border-gray-200 dark:border-gray-800 p-4 relative">
+        {!isCollapsed && (
+          <>
+            <h2 className="text-xl font-bold text-blue-600 dark:text-blue-400">NOTELOFT</h2>
+            <p className="mt-1 text-xs font-semibold text-gray-600 dark:text-gray-400">Student Workspace OS</p>
+            <p className="mt-2 text-sm font-semibold text-gray-900 dark:text-gray-200">{workspaceName}</p>
+          </>
+        )}
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="absolute top-4 right-2 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {isCollapsed ? (
+            <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+          ) : (
+            <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+          )}
+        </button>
       </div>
 
       <nav className="flex-1 space-y-3 overflow-y-auto p-3">
@@ -253,9 +272,10 @@ export function Sidebar({ workspaceId, workspaceName, pages }: SidebarProps) {
                     ? "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
                     : "text-gray-900 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
                 }`}
+                title={isCollapsed ? item.label : undefined}
               >
-                <Icon className="h-4 w-4" />
-                {item.label}
+                <Icon className="h-4 w-4 flex-shrink-0" />
+                {!isCollapsed && item.label}
               </Link>
             );
           })}
@@ -263,9 +283,26 @@ export function Sidebar({ workspaceId, workspaceName, pages }: SidebarProps) {
 
         {/* Advanced Features Section */}
         <div className="mt-6">
-          <div className="flex items-center justify-between px-3 mb-2">
+          <button
+            onClick={() => {
+              const newExpanded = new Set(expandedSections);
+              if (newExpanded.has("advanced")) {
+                newExpanded.delete("advanced");
+              } else {
+                newExpanded.add("advanced");
+              }
+              setExpandedSections(newExpanded);
+            }}
+            className="flex items-center justify-between w-full px-3 mb-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg py-1 transition-colors"
+          >
             <span className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">Advanced</span>
-          </div>
+            {expandedSections.has("advanced") ? (
+              <ChevronRight className="w-3 h-3 text-gray-400 rotate-90" />
+            ) : (
+              <ChevronRight className="w-3 h-3 text-gray-400" />
+            )}
+          </button>
+          {expandedSections.has("advanced") && (
           <div className="space-y-1">
             {advancedNavItems.map((item) => {
               const Icon = item.icon;
@@ -286,13 +323,31 @@ export function Sidebar({ workspaceId, workspaceName, pages }: SidebarProps) {
               );
             })}
           </div>
+          )}
         </div>
 
         {favorites.length > 0 && (
           <div className="space-y-1">
-            <div className="flex items-center justify-between px-3">
+            <button
+              onClick={() => {
+                const newExpanded = new Set(expandedSections);
+                if (newExpanded.has("favorites")) {
+                  newExpanded.delete("favorites");
+                } else {
+                  newExpanded.add("favorites");
+                }
+                setExpandedSections(newExpanded);
+              }}
+              className="flex items-center justify-between w-full px-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg py-1 transition-colors"
+            >
               <span className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">Favorites</span>
-            </div>
+              {expandedSections.has("favorites") ? (
+                <ChevronRight className="w-3 h-3 text-gray-400 rotate-90" />
+              ) : (
+                <ChevronRight className="w-3 h-3 text-gray-400" />
+              )}
+            </button>
+            {expandedSections.has("favorites") && (
             <div className="space-y-1">
               {favorites.map((page) => (
                 <Link
@@ -309,18 +364,39 @@ export function Sidebar({ workspaceId, workspaceName, pages }: SidebarProps) {
                 </Link>
               ))}
             </div>
+            )}
           </div>
         )}
 
         {pageState.length > 0 && (
           <div className="space-y-2">
             <div className="flex items-center justify-between px-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">Pages</span>
+              <button
+                onClick={() => {
+                  const newExpanded = new Set(expandedSections);
+                  if (newExpanded.has("pages")) {
+                    newExpanded.delete("pages");
+                  } else {
+                    newExpanded.add("pages");
+                  }
+                  setExpandedSections(newExpanded);
+                }}
+                className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg py-1 px-2 -ml-2 transition-colors"
+              >
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">Pages</span>
+                {expandedSections.has("pages") ? (
+                  <ChevronRight className="w-3 h-3 text-gray-400 rotate-90" />
+                ) : (
+                  <ChevronRight className="w-3 h-3 text-gray-400" />
+                )}
+              </button>
               <Link href={`/workspace/${workspaceId}/pages/new`} className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline">
                 + New
               </Link>
             </div>
+            {expandedSections.has("pages") && (
             <DragDropContext onDragEnd={handleDragEnd}>{renderTree(tree)}</DragDropContext>
+            )}
           </div>
         )}
       </nav>

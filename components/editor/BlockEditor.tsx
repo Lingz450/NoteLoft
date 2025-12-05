@@ -26,8 +26,14 @@ import {
   Heading3,
   Minus,
   Image as ImageIcon,
+  Lightbulb,
+  AlertCircle,
+  CheckCircle,
+  XCircle,
+  Info,
 } from "lucide-react";
 import { useDebounce } from "@/lib/hooks/useDebounce";
+import { Callout, getCalloutIcon, getCalloutColors, CalloutType } from "@/lib/tiptap-extensions/Callout";
 
 interface BlockEditorProps {
   pageId: string;
@@ -39,6 +45,8 @@ interface BlockEditorProps {
 export function BlockEditor({ pageId, initialContent = "", onSave, placeholder }: BlockEditorProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [showSlashMenu, setShowSlashMenu] = useState(false);
+  const [slashQuery, setSlashQuery] = useState("");
 
   const editor = useEditor({
     extensions: [
@@ -54,12 +62,53 @@ export function BlockEditor({ pageId, initialContent = "", onSave, placeholder }
       TaskItem.configure({
         nested: true,
       }),
+      Callout,
     ],
     content: initialContent,
     editorProps: {
       attributes: {
         class: "prose dark:prose-invert prose-sm sm:prose lg:prose-lg xl:prose-xl focus:outline-none max-w-none p-8",
       },
+      handleKeyDown: (view, event) => {
+        // Detect slash command
+        if (event.key === "/" && !showSlashMenu) {
+          setShowSlashMenu(true);
+          setSlashQuery("");
+          return true;
+        }
+        
+        // Close slash menu on Escape
+        if (event.key === "Escape" && showSlashMenu) {
+          setShowSlashMenu(false);
+          return true;
+        }
+        
+        // Additional keyboard shortcuts
+        if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key === "P") {
+          event.preventDefault();
+          // Quick command palette (can be extended)
+          return true;
+        }
+        
+        return false;
+      },
+    },
+    onUpdate: ({ editor }) => {
+      // Detect slash in content for menu
+      const { from, to } = editor.state.selection;
+      const text = editor.state.doc.textBetween(Math.max(0, from - 20), from, " ");
+      
+      if (text.endsWith("/") && !showSlashMenu) {
+        setShowSlashMenu(true);
+        setSlashQuery("");
+      } else if (showSlashMenu && text.includes("/")) {
+        const match = text.match(/\/(\w*)$/);
+        if (match) {
+          setSlashQuery(match[1]);
+        }
+      } else if (!text.includes("/")) {
+        setShowSlashMenu(false);
+      }
     },
   });
 
@@ -207,6 +256,38 @@ export function BlockEditor({ pageId, initialContent = "", onSave, placeholder }
           <Minus className="w-4 h-4" />
         </button>
 
+        <div className="w-px h-6 bg-gray-300 dark:bg-gray-700 mx-1" />
+
+        {/* Callout Buttons */}
+        <button
+          onClick={() => editor.chain().focus().setCallout("info").run()}
+          className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+          title="Info Callout"
+        >
+          <Info className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => editor.chain().focus().setCallout("warning").run()}
+          className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+          title="Warning Callout"
+        >
+          <AlertCircle className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => editor.chain().focus().setCallout("success").run()}
+          className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+          title="Success Callout"
+        >
+          <CheckCircle className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => editor.chain().focus().setCallout("tip").run()}
+          className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+          title="Tip Callout"
+        >
+          <Lightbulb className="w-4 h-4" />
+        </button>
+
         <div className="flex-1" />
 
         {/* Save Status */}
@@ -225,7 +306,26 @@ export function BlockEditor({ pageId, initialContent = "", onSave, placeholder }
       </div>
 
       {/* Editor Content */}
-      <EditorContent editor={editor} className="min-h-[600px]" />
+      <div className="relative">
+        <EditorContent editor={editor} className="min-h-[600px]" />
+        
+        {/* Slash Menu */}
+        {showSlashMenu && editor && (
+          <div className="absolute z-50" style={{ 
+            top: editor.view.coordsAtPos(editor.state.selection.from)?.top || 0, 
+            left: 20 
+          }}>
+            <SlashMenu 
+              editor={editor} 
+              query={slashQuery}
+              onSelect={() => {
+                setShowSlashMenu(false);
+                setSlashQuery("");
+              }}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
