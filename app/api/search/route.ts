@@ -1,60 +1,98 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireWorkspaceMember } from "@/lib/auth";
 
+/**
+ * GET /api/search
+ * Global search across pages, tasks, courses, exams
+ */
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
+  const query = searchParams.get("q");
   const workspaceId = searchParams.get("workspaceId");
-  const query = searchParams.get("q")?.trim() ?? "";
 
-  if (!workspaceId) {
-    return NextResponse.json({ error: "workspaceId required" }, { status: 400 });
+  if (!query || !workspaceId) {
+    return NextResponse.json({ error: "Missing query or workspaceId" }, { status: 400 });
   }
 
-  if (query.length < 2) {
-    return NextResponse.json({ pages: [], tasks: [], courses: [] });
-  }
+  try {
+    const searchTerm = query.toLowerCase();
 
-  if (process.env.SKIP_AUTH !== "true") {
-    try {
-      await requireWorkspaceMember(workspaceId);
-    } catch {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-  }
-
-  const [pages, tasks, courses] = await Promise.all([
-    prisma.page.findMany({
+    // Search pages
+    const pages = await prisma.page.findMany({
       where: {
         workspaceId,
-        title: { contains: query },
+        title: {
+          contains: searchTerm,
+          mode: "insensitive",
+        },
       },
-      select: { id: true, title: true },
+      select: {
+        id: true,
+        title: true,
+        icon: true,
+      },
       take: 5,
-      orderBy: { updatedAt: "desc" },
-    }),
-    prisma.task.findMany({
+    });
+
+    // Search tasks
+    const tasks = await prisma.task.findMany({
       where: {
         workspaceId,
-        title: { contains: query },
+        title: {
+          contains: searchTerm,
+          mode: "insensitive",
+        },
       },
-      select: { id: true, title: true, status: true },
+      select: {
+        id: true,
+        title: true,
+        status: true,
+      },
       take: 5,
-      orderBy: { updatedAt: "desc" },
-    }),
-    prisma.course.findMany({
+    });
+
+    // Search courses
+    const courses = await prisma.course.findMany({
       where: {
         workspaceId,
         OR: [
-          { name: { contains: query } },
-          { code: { contains: query } },
+          { name: { contains: searchTerm, mode: "insensitive" } },
+          { code: { contains: searchTerm, mode: "insensitive" } },
         ],
       },
-      select: { id: true, name: true, code: true },
+      select: {
+        id: true,
+        code: true,
+        name: true,
+      },
       take: 5,
-      orderBy: { name: "asc" },
-    }),
-  ]);
+    });
 
-  return NextResponse.json({ pages, tasks, courses });
+    // Search exams
+    const exams = await prisma.exam.findMany({
+      where: {
+        workspaceId,
+        title: {
+          contains: searchTerm,
+          mode: "insensitive",
+        },
+      },
+      select: {
+        id: true,
+        title: true,
+        date: true,
+      },
+      take: 5,
+    });
+
+    return NextResponse.json({
+      pages,
+      tasks,
+      courses,
+      exams,
+    });
+  } catch (error) {
+    console.error("Search error:", error);
+    return NextResponse.json({ error: "Search failed" }, { status: 500 });
+  }
 }

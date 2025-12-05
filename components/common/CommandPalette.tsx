@@ -1,238 +1,303 @@
 "use client";
 
+/**
+ * CommandPalette Component
+ * 
+ * Notion-style quick switcher and command palette (Cmd/Ctrl+K).
+ */
+
 import { useState, useEffect, useRef } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import { 
+import { useRouter } from "next/navigation";
+import {
   Search,
   FileText,
   CheckSquare,
-  Calendar,
   GraduationCap,
+  ClipboardList,
+  Plus,
   Clock,
   Sparkles,
-  Settings,
-  User,
-  BarChart3,
-  Brain,
-  Hash,
-  AtSign,
-  List,
-  Table,
-  LayoutGrid,
-  ChevronRight
 } from "lucide-react";
+import { Modal } from "@/components/common/Modal";
 
-interface Command {
+type SearchResult = {
   id: string;
-  label: string;
-  category: string;
-  icon: any;
-  action: () => void;
-  keywords?: string[];
-}
+  title: string;
+  type: "page" | "task" | "course" | "exam" | "action";
+  subtitle?: string;
+  icon?: React.ReactNode;
+  href?: string;
+  action?: () => void;
+};
 
 export function CommandPalette() {
-  const router = useRouter();
-  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const [search, setSearch] = useState("");
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [isSearching, setIsSearching] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
-  const workspaceId = pathname?.match(/\/workspace\/([^/]+)/)?.[1] || "demo";
-
-  const commands: Command[] = [
-    // Navigation
-    { id: "nav-dashboard", label: "Go to Dashboard", category: "Navigate", icon: LayoutGrid, action: () => router.push(`/workspace/${workspaceId}`) },
-    { id: "nav-tasks", label: "Go to Tasks", category: "Navigate", icon: CheckSquare, action: () => router.push(`/workspace/${workspaceId}/tasks`) },
-    { id: "nav-courses", label: "Go to Courses", category: "Navigate", icon: GraduationCap, action: () => router.push(`/workspace/${workspaceId}/courses`) },
-    { id: "nav-schedule", label: "Go to Schedule", category: "Navigate", icon: Calendar, action: () => router.push(`/workspace/${workspaceId}/schedule`) },
-    { id: "nav-stats", label: "Go to Stats", category: "Navigate", icon: BarChart3, action: () => router.push(`/workspace/${workspaceId}/stats`) },
-    { id: "nav-ai", label: "Go to AI Assistant", category: "Navigate", icon: Sparkles, action: () => router.push(`/ai`) },
-    { id: "nav-profile", label: "Go to Profile", category: "Navigate", icon: User, action: () => router.push(`/profile`) },
-    { id: "nav-settings", label: "Go to Settings", category: "Navigate", icon: Settings, action: () => router.push(`/settings`) },
-    
-    // Create Actions
-    { id: "create-task", label: "New Task", category: "Create", icon: CheckSquare, action: () => router.push(`/workspace/${workspaceId}/tasks?action=new`), keywords: ["add", "task", "assignment"] },
-    { id: "create-page", label: "New Page", category: "Create", icon: FileText, action: () => router.push(`/workspace/${workspaceId}/pages/new`), keywords: ["add", "page", "note"] },
-    { id: "create-course", label: "New Course", category: "Create", icon: GraduationCap, action: () => router.push(`/workspace/${workspaceId}/courses?action=new`), keywords: ["add", "course", "class"] },
-    { id: "create-exam", label: "New Exam", category: "Create", icon: Calendar, action: () => router.push(`/workspace/${workspaceId}/exams?action=new`), keywords: ["add", "exam", "test"] },
-    { id: "create-session", label: "Start Study Session", category: "Create", icon: Clock, action: () => router.push(`/workspace/${workspaceId}/study`), keywords: ["focus", "study", "timer"] },
-    
-    // AI Commands
-    { id: "ai-help", label: "Ask AI Assistant", category: "AI", icon: Sparkles, action: () => router.push(`/ai`), keywords: ["ai", "assistant", "help"] },
-    { id: "ai-summarize", label: "AI: Summarize Page", category: "AI", icon: FileText, action: () => alert("AI Summarize - Coming soon!"), keywords: ["summarize", "summary"] },
-    { id: "ai-quiz", label: "AI: Generate Quiz", category: "AI", icon: Brain, action: () => alert("AI Quiz Generator - Coming soon!"), keywords: ["quiz", "test", "practice"] },
+  // Quick actions (always visible when query is empty)
+  const quickActions: SearchResult[] = [
+    {
+      id: "new-page",
+      title: "Create new page",
+      type: "action",
+      icon: <FileText className="w-4 h-4" />,
+      action: () => router.push("/workspace/demo/pages/new"),
+    },
+    {
+      id: "new-task",
+      title: "Add new task",
+      type: "action",
+      icon: <CheckSquare className="w-4 h-4" />,
+      action: () => router.push("/workspace/demo/tasks?action=new"),
+    },
+    {
+      id: "new-exam",
+      title: "Add new exam",
+      type: "action",
+      icon: <ClipboardList className="w-4 h-4" />,
+      action: () => router.push("/workspace/demo/exams?action=new"),
+    },
+    {
+      id: "start-session",
+      title: "Start 25-min focus session",
+      type: "action",
+      icon: <Clock className="w-4 h-4" />,
+      action: () => router.push("/workspace/demo/sessions?action=start&duration=25"),
+    },
+    {
+      id: "ai-assistant",
+      title: "Open AI assistant",
+      type: "action",
+      icon: <Sparkles className="w-4 h-4" />,
+      action: () => router.push("/ai"),
+    },
   ];
 
-  const filteredCommands = commands.filter(cmd => {
-    const searchLower = search.toLowerCase();
-    return (
-      cmd.label.toLowerCase().includes(searchLower) ||
-      cmd.category.toLowerCase().includes(searchLower) ||
-      cmd.keywords?.some(k => k.includes(searchLower))
-    );
-  });
-
-  // Keyboard shortcuts
+  // Open palette with Cmd/Ctrl+K
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Cmd+K or Ctrl+K to open
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         setIsOpen(true);
       }
-      // Escape to close
-      if (e.key === 'Escape') {
+
+      if (e.key === "Escape") {
         setIsOpen(false);
-        setSearch("");
-        setSelectedIndex(0);
-      }
-      // Arrow keys for navigation
-      if (isOpen) {
-        if (e.key === 'ArrowDown') {
-          e.preventDefault();
-          setSelectedIndex(i => Math.min(i + 1, filteredCommands.length - 1));
-        }
-        if (e.key === 'ArrowUp') {
-          e.preventDefault();
-          setSelectedIndex(i => Math.max(i - 1, 0));
-        }
-        // Enter to execute
-        if (e.key === 'Enter' && filteredCommands[selectedIndex]) {
-          e.preventDefault();
-          filteredCommands[selectedIndex].action();
-          setIsOpen(false);
-          setSearch("");
-          setSelectedIndex(0);
-        }
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, selectedIndex, filteredCommands]);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
-  // Focus input when opening
+  // Focus input when opened
   useEffect(() => {
-    if (isOpen && inputRef.current) {
-      inputRef.current.focus();
+    if (isOpen) {
+      inputRef.current?.focus();
+      setQuery("");
+      setSelectedIndex(0);
     }
   }, [isOpen]);
 
-  // Reset selection when search changes
+  // Search
   useEffect(() => {
-    setSelectedIndex(0);
-  }, [search]);
+    if (!query.trim()) {
+      setResults(quickActions);
+      setIsSearching(false);
+      return;
+    }
 
-  if (!isOpen) return null;
+    const search = async () => {
+      setIsSearching(true);
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&workspaceId=demo`);
+        const data = await res.json();
+        
+        // Map API results to SearchResult format
+        const mapped: SearchResult[] = [
+          ...data.pages?.map((p: any) => ({
+            id: p.id,
+            title: p.title,
+            type: "page" as const,
+            subtitle: "Page",
+            icon: <FileText className="w-4 h-4" />,
+            href: `/workspace/demo/pages/${p.id}/edit`,
+          })) || [],
+          ...data.tasks?.map((t: any) => ({
+            id: t.id,
+            title: t.title,
+            type: "task" as const,
+            subtitle: `Task • ${t.status}`,
+            icon: <CheckSquare className="w-4 h-4" />,
+            href: `/workspace/demo/tasks?selected=${t.id}`,
+          })) || [],
+          ...data.courses?.map((c: any) => ({
+            id: c.id,
+            title: `${c.code} - ${c.name}`,
+            type: "course" as const,
+            subtitle: "Course",
+            icon: <GraduationCap className="w-4 h-4" />,
+            href: `/workspace/demo/courses/${c.id}`,
+          })) || [],
+          ...data.exams?.map((e: any) => ({
+            id: e.id,
+            title: e.title,
+            type: "exam" as const,
+            subtitle: `Exam • ${e.date}`,
+            icon: <ClipboardList className="w-4 h-4" />,
+            href: `/workspace/demo/exams/${e.id}`,
+          })) || [],
+        ];
 
-  const groupedCommands = filteredCommands.reduce((acc, cmd) => {
-    if (!acc[cmd.category]) acc[cmd.category] = [];
-    acc[cmd.category].push(cmd);
-    return acc;
-  }, {} as Record<string, Command[]>);
+        setResults(mapped);
+      } catch (error) {
+        console.error("Search error:", error);
+        setResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    const debounce = setTimeout(search, 300);
+    return () => clearTimeout(debounce);
+  }, [query]);
+
+  // Keyboard navigation
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev + 1) % results.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev - 1 + results.length) % results.length);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      handleSelect(results[selectedIndex]);
+    }
+  };
+
+  const handleSelect = (result: SearchResult) => {
+    if (result.action) {
+      result.action();
+    } else if (result.href) {
+      router.push(result.href);
+    }
+    setIsOpen(false);
+  };
 
   return (
     <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/50 z-50"
-        onClick={() => setIsOpen(false)}
-      />
+      {/* Trigger button (optional, shown in UI) */}
+      <button
+        onClick={() => setIsOpen(true)}
+        className="hidden md:flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+      >
+        <Search className="w-4 h-4" />
+        <span>Quick search</span>
+        <kbd className="px-2 py-0.5 text-xs bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded">
+          ⌘K
+        </kbd>
+      </button>
 
-      {/* Command Palette */}
-      <div className="fixed top-1/4 left-1/2 -translate-x-1/2 w-full max-w-2xl z-50 px-4">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-          {/* Search Input */}
-          <div className="flex items-center gap-3 p-4 border-b border-gray-200 dark:border-gray-700">
-            <Search className="w-5 h-5 text-gray-400" />
-            <input
-              ref={inputRef}
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Type a command or search..."
-              className="flex-1 bg-transparent border-none outline-none text-gray-900 dark:text-white placeholder-gray-400"
-            />
-            <div className="flex items-center gap-1 text-xs text-gray-400">
-              <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded">Esc</kbd>
-              <span>to close</span>
+      {/* Modal */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center pt-20 bg-black/50 backdrop-blur-sm"
+          onClick={() => setIsOpen(false)}
+        >
+          <div
+            className="w-full max-w-2xl bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Search Input */}
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-800">
+              <Search className="w-5 h-5 text-gray-400" />
+              <input
+                ref={inputRef}
+                type="text"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Search pages, tasks, courses, exams... or type a command"
+                className="flex-1 bg-transparent text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none"
+              />
+              {isSearching && (
+                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              )}
             </div>
-          </div>
 
-          {/* Commands List */}
-          <div className="max-h-96 overflow-y-auto py-2">
-            {Object.entries(groupedCommands).map(([category, cmds]) => (
-              <div key={category} className="mb-2">
-                <div className="px-4 py-2">
-                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
-                    {category}
-                  </p>
+            {/* Results */}
+            <div className="max-h-[400px] overflow-y-auto">
+              {results.length === 0 ? (
+                <div className="p-8 text-center text-sm text-gray-500">
+                  {query ? "No results found" : "Start typing to search..."}
                 </div>
-                <div>
-                  {cmds.map((cmd, index) => {
-                    const Icon = cmd.icon;
-                    const globalIndex = filteredCommands.indexOf(cmd);
-                    const isSelected = globalIndex === selectedIndex;
-
-                    return (
-                      <button
-                        key={cmd.id}
-                        onClick={() => {
-                          cmd.action();
-                          setIsOpen(false);
-                          setSearch("");
-                          setSelectedIndex(0);
-                        }}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 transition-colors ${
-                          isSelected
-                            ? "bg-blue-50 dark:bg-blue-900/20"
-                            : "hover:bg-gray-50 dark:hover:bg-gray-700"
-                        }`}
-                      >
-                        <Icon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                        <span className="flex-1 text-left text-sm text-gray-900 dark:text-white">
-                          {cmd.label}
-                        </span>
-                        {isSelected && (
-                          <ChevronRight className="w-4 h-4 text-blue-600" />
+              ) : (
+                <>
+                  {!query && (
+                    <div className="px-3 py-2 text-xs font-bold uppercase tracking-wider text-gray-500">
+                      Quick Actions
+                    </div>
+                  )}
+                  {results.map((result, index) => (
+                    <button
+                      key={result.id}
+                      onClick={() => handleSelect(result)}
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
+                        index === selectedIndex
+                          ? "bg-blue-50 dark:bg-blue-900/20"
+                          : "hover:bg-gray-50 dark:hover:bg-gray-800"
+                      }`}
+                    >
+                      <div className="text-gray-600 dark:text-gray-400">
+                        {result.icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-gray-900 dark:text-white truncate">
+                          {result.title}
+                        </div>
+                        {result.subtitle && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            {result.subtitle}
+                          </div>
                         )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-
-            {filteredCommands.length === 0 && (
-              <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                No commands found for &quot;{search}&quot;
-              </div>
-            )}
-          </div>
-
-          {/* Footer */}
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-            <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
-              <div className="flex items-center gap-1">
-                <kbd className="px-2 py-1 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">↑↓</kbd>
-                <span>Navigate</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <kbd className="px-2 py-1 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">Enter</kbd>
-                <span>Select</span>
-              </div>
+                      </div>
+                      {index === selectedIndex && (
+                        <kbd className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded">
+                          ↵
+                        </kbd>
+                      )}
+                    </button>
+                  ))}
+                </>
+              )}
             </div>
-            <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-              <kbd className="px-2 py-1 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">⌘K</kbd>
-              <span>or</span>
-              <kbd className="px-2 py-1 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">Ctrl+K</kbd>
+
+            {/* Footer */}
+            <div className="flex items-center justify-between px-4 py-2 text-xs text-gray-500 border-t border-gray-200 dark:border-gray-800">
+              <div className="flex items-center gap-4">
+                <span className="flex items-center gap-1">
+                  <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded">↑↓</kbd>
+                  Navigate
+                </span>
+                <span className="flex items-center gap-1">
+                  <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded">↵</kbd>
+                  Select
+                </span>
+                <span className="flex items-center gap-1">
+                  <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded">esc</kbd>
+                  Close
+                </span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </>
   );
 }
-

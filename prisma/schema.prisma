@@ -78,9 +78,12 @@ model Page {
   workspaceId String
   parentId    String?
   title       String
+  icon        String?  // Emoji or icon name
   type        String   @default("GENERIC")
-  content     String   @default("{}")
+  content     String   @default("{}") // Legacy - now using blocks
   isFavorite  Boolean  @default(false)
+  isPublic    Boolean  @default(false)
+  publicSlug  String?  @unique
   position    Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -89,9 +92,30 @@ model Page {
   parent       Page?     @relation("PageHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
   children     Page[]    @relation("PageHierarchy")
   relatedTasks Task[]
+  blocks       Block[]
+  comments     Comment[]
+  revisions    PageRevision[]
 
   @@index([workspaceId])
   @@index([parentId])
+  @@index([publicSlug])
+}
+
+// Block-based content system
+model Block {
+  id        String   @id @default(cuid())
+  pageId    String
+  type      String   // PARAGRAPH | HEADING_1 | HEADING_2 | HEADING_3 | BULLET_LIST | NUMBERED_LIST | TODO | QUOTE | CALLOUT | CODE | DIVIDER | IMAGE
+  content   String   // JSON: { text, checked, language, url, etc }
+  order     Int      @default(0)
+  metadata  String?  // JSON for extras (callout color, code language, etc)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@index([pageId])
+  @@index([order])
 }
 
 model Course {
@@ -588,4 +612,94 @@ model WorkspacePreferences {
   updatedAt         DateTime @updatedAt
 
   @@index([workspaceId])
+}
+
+// ============================================
+// NOTION-CLASS FEATURES
+// ============================================
+
+// Comments & Mentions
+model Comment {
+  id          String   @id @default(cuid())
+  workspaceId String
+  pageId      String?
+  taskId      String?
+  examId      String?
+  authorId    String?  // Nullable for now, will link to User later
+  authorName  String   @default("Student")
+  content     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  page     Page? @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  mentions Mention[]
+
+  @@index([workspaceId])
+  @@index([pageId])
+  @@index([taskId])
+  @@index([examId])
+}
+
+model Mention {
+  id          String   @id @default(cuid())
+  commentId   String
+  targetType  String   // USER | GROUP | PAGE | TASK
+  targetName  String   // Free text for now, e.g. "@Alice"
+  targetId    String?  // Will be used when real users exist
+  createdAt   DateTime @default(now())
+
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@index([commentId])
+}
+
+// Resources & File Attachments
+model Resource {
+  id          String   @id @default(cuid())
+  workspaceId String
+  courseId    String?
+  pageId      String?
+  title       String
+  url         String?
+  type        String   // LINK | PDF | IMAGE | FILE | VIDEO
+  fileSize    Int?     // In bytes
+  filePath    String?  // Server path or cloud storage URL
+  metadata    String?  // JSON: { mimeType, dimensions, etc }
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([workspaceId])
+  @@index([courseId])
+  @@index([pageId])
+}
+
+// Version History
+model PageRevision {
+  id         String   @id @default(cuid())
+  pageId     String
+  snapshot   String   // JSON: { title, blocks: [...] }
+  createdBy  String?  // User ID when auth exists
+  createdAt  DateTime @default(now())
+
+  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@index([pageId])
+  @@index([createdAt])
+}
+
+// Activity Log
+model ActivityLog {
+  id          String   @id @default(cuid())
+  workspaceId String
+  type        String   // PAGE_CREATED | TASK_CREATED | EXAM_CREATED | SESSION_COMPLETED | COMMENT_ADDED | etc
+  targetType  String   // PAGE | TASK | EXAM | SESSION | COMMENT
+  targetId    String
+  targetTitle String?  // Cached for display
+  metadata    String?  // JSON: { oldValue, newValue, etc }
+  createdBy   String?  // User ID
+  createdAt   DateTime @default(now())
+
+  @@index([workspaceId])
+  @@index([createdAt])
+  @@index([targetType, targetId])
 }

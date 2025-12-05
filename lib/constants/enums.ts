@@ -68,6 +68,45 @@ export const CALENDAR_PROVIDER_VALUES = ["GOOGLE", "OUTLOOK", "ICAL", "OTHER"] a
 export const QUESTION_DIFFICULTY_VALUES = ["EASY", "MEDIUM", "HARD"] as const;
 
 // ============================================
+// NOTION-CLASS FEATURES
+// ============================================
+
+// Block Types for Rich Text Editor
+export const BLOCK_TYPE_VALUES = [
+  "PARAGRAPH",
+  "HEADING_1",
+  "HEADING_2",
+  "HEADING_3",
+  "BULLET_LIST",
+  "NUMBERED_LIST",
+  "TODO",
+  "QUOTE",
+  "CALLOUT",
+  "CODE",
+  "DIVIDER",
+  "IMAGE",
+] as const;
+
+// Resource Types
+export const RESOURCE_TYPE_VALUES = ["LINK", "PDF", "IMAGE", "FILE", "VIDEO"] as const;
+
+// Activity Log Types
+export const ACTIVITY_TYPE_VALUES = [
+  "PAGE_CREATED",
+  "PAGE_UPDATED",
+  "PAGE_DELETED",
+  "TASK_CREATED",
+  "TASK_COMPLETED",
+  "EXAM_CREATED",
+  "SESSION_COMPLETED",
+  "COMMENT_ADDED",
+  "RESOURCE_ADDED",
+] as const;
+
+// Mention Target Types
+export const MENTION_TARGET_TYPE_VALUES = ["USER", "GROUP", "PAGE", "TASK"] as const;
+
+// ============================================
 // TYPE EXPORTS
 // ============================================
 
@@ -88,3 +127,7 @@ export type TemplateCategoryValue = (typeof TEMPLATE_CATEGORY_VALUES)[number];
 export type TemplateItemType = (typeof TEMPLATE_ITEM_TYPE_VALUES)[number];
 export type CalendarProvider = (typeof CALENDAR_PROVIDER_VALUES)[number];
 export type QuestionDifficulty = (typeof QUESTION_DIFFICULTY_VALUES)[number];
+export type BlockType = (typeof BLOCK_TYPE_VALUES)[number];
+export type ResourceType = (typeof RESOURCE_TYPE_VALUES)[number];
+export type ActivityType = (typeof ACTIVITY_TYPE_VALUES)[number];
+export type MentionTargetType = (typeof MENTION_TARGET_TYPE_VALUES)[number];
