@@ -83,19 +83,11 @@ export function BlockEditor({ pageId, initialContent = "", onSave, placeholder }
           return true;
         }
         
-        // Bold: Cmd/Ctrl+B (TipTap handles this by default, but we ensure it works)
-        if ((event.metaKey || event.ctrlKey) && event.key === "b" && !event.shiftKey) {
-          event.preventDefault();
-          editor?.chain().focus().toggleBold().run();
-          return true;
-        }
+        // Bold: Cmd/Ctrl+B - TipTap StarterKit handles this automatically
+        // We return false to let TipTap handle it
         
-        // Italic: Cmd/Ctrl+I (TipTap handles this by default, but we ensure it works)
-        if ((event.metaKey || event.ctrlKey) && event.key === "i" && !event.shiftKey) {
-          event.preventDefault();
-          editor?.chain().focus().toggleItalic().run();
-          return true;
-        }
+        // Italic: Cmd/Ctrl+I - TipTap StarterKit handles this automatically
+        // We return false to let TipTap handle it
         
         // Additional keyboard shortcuts
         if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key === "P") {
@@ -104,7 +96,7 @@ export function BlockEditor({ pageId, initialContent = "", onSave, placeholder }
           return true;
         }
         
-        return false;
+        return false; // Let TipTap handle default shortcuts
       },
     },
     onUpdate: ({ editor }) => {
