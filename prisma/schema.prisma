@@ -1,5 +1,5 @@
-// NOTELOFT - Simple Schema
-// Clean authentication system
+// NOTELOFT - Comprehensive Schema
+// Full-featured student workspace system
 
 generator client {
   provider = "prisma-client-js"
@@ -24,8 +24,14 @@ datasource db {
 // TaskPriority: LOW | NORMAL | HIGH
 // TimetableSlotType: LECTURE | LAB | STUDY | EXAM | OTHER
 // StudySessionStatus: IN_PROGRESS | COMPLETED | CANCELLED | INTERRUPTED
-// StudySessionMood: LOW | OKAY | HIGH
+// StudySessionMood: VERY_BAD | BAD | OKAY | GOOD | GREAT
 // StudySessionEventType: STARTED | PAUSED | RESUMED | ENDED | TASK_MARKED_DONE | NOTE_ADDED | INTERRUPTED
+// StudyRunGoalType: A_GRADE | PASS | CATCH_UP | CUSTOM
+// StudyRunWeekStatus: PENDING | ON_TRACK | BEHIND | AHEAD | COMPLETED
+// BossDifficulty: EASY | NORMAL | HARD | NIGHTMARE
+// BossStatus: ALIVE | DEFEATED | ESCAPED
+// FocusRoomStatus: ACTIVE | PAUSED | ENDED
+// CalendarProvider: GOOGLE | OUTLOOK | ICAL | OTHER
 
 // ============================================
 // USER & AUTH
@@ -205,7 +211,10 @@ model StudySession {
   plannedDurationMinutes Int?
   status                String   @default("IN_PROGRESS")
   notes                 String?
-  mood                  String?
+  mood                  String?  // VERY_BAD | BAD | OKAY | GOOD | GREAT
+  // Micro Journal fields
+  plannedIntent         String?  // What I plan to work on
+  actualOutcome         String?  // What I actually did
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
@@ -231,4 +240,352 @@ model StudySessionEvent {
   session StudySession @relation(fields: [studySessionId], references: [id], onDelete: Cascade)
 
   @@index([studySessionId])
+}
+
+// ============================================
+// FEATURE 1: STUDY RUNS (Semester Study Plans)
+// ============================================
+
+model StudyRun {
+  id                  String   @id @default(cuid())
+  workspaceId         String
+  courseId            String
+  goalType            String   // A_GRADE | PASS | CATCH_UP | CUSTOM
+  targetGrade         String?  // For A_GRADE goal type
+  goalDescription     String?  // For CUSTOM goal type
+  startDate           DateTime
+  endDate             DateTime
+  preferredDaysPerWeek Int     @default(3)
+  minutesPerSession   Int      @default(50)
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  weeks StudyRunWeek[]
+
+  @@index([workspaceId])
+  @@index([courseId])
+}
+
+model StudyRunWeek {
+  id                    String   @id @default(cuid())
+  studyRunId            String
+  weekNumber            Int      // 1-indexed week of the study run
+  startDate             DateTime
+  endDate               DateTime
+  targetSessions        Int
+  targetMinutes         Int
+  completedSessions     Int      @default(0)
+  completedMinutes      Int      @default(0)
+  status                String   @default("PENDING") // PENDING | ON_TRACK | BEHIND | AHEAD | COMPLETED
+  suggestedTopics       String?  // JSON array of topics
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  studyRun StudyRun @relation(fields: [studyRunId], references: [id], onDelete: Cascade)
+
+  @@index([studyRunId])
+}
+
+// ============================================
+// FEATURE 2: BOSS FIGHT MODE (Gamified Exam Prep)
+// ============================================
+
+model BossFight {
+  id          String   @id @default(cuid())
+  examId      String   @unique
+  name        String
+  difficulty  String   // EASY | NORMAL | HARD | NIGHTMARE
+  maxHP       Int
+  currentHP   Int
+  status      String   @default("ALIVE") // ALIVE | DEFEATED | ESCAPED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  hits BossFightHit[]
+
+  @@index([examId])
+  @@index([status])
+}
+
+model BossFightHit {
+  id             String   @id @default(cuid())
+  bossFightId    String
+  sessionId      String?  // Link to actual study session
+  damage         Int      // Positive for damage, negative for healing
+  description    String   // "60-min study session" or "Missed scheduled session"
+  createdAt      DateTime @default(now())
+
+  bossFight BossFight @relation(fields: [bossFightId], references: [id], onDelete: Cascade)
+
+  @@index([bossFightId])
+}
+
+// ============================================
+// FEATURE 3: FOCUS ROOMS (Shared Focus Sessions)
+// ============================================
+
+model FocusRoom {
+  id               String   @id @default(cuid())
+  name             String
+  status           String   @default("ACTIVE") // ACTIVE | PAUSED | ENDED
+  timerDuration    Int      // minutes
+  timerStartedAt   DateTime?
+  timerPausedAt    DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  participants FocusRoomParticipant[]
+
+  @@index([status])
+}
+
+model FocusRoomParticipant {
+  id             String   @id @default(cuid())
+  focusRoomId    String
+  userId         String?  // null for anonymous
+  displayName    String   // Name or "Anonymous"
+  avatarColor    String   @default("#3B82F6")
+  joinedAt       DateTime @default(now())
+  lastSeenAt     DateTime @default(now())
+  currentReaction String? // emoji like "✅", "☕", "😴"
+  leftAt         DateTime?
+
+  focusRoom FocusRoom @relation(fields: [focusRoomId], references: [id], onDelete: Cascade)
+
+  @@index([focusRoomId])
+}
+
+// ============================================
+// FEATURE 4: KNOWLEDGE GRAPH (Topics)
+// ============================================
+
+model Topic {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  courseId      String?
+  name          String
+  description   String?
+  parentTopicId String?  // For subtopics
+  color         String   @default("#6366F1")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  parentTopic     Topic?       @relation("TopicHierarchy", fields: [parentTopicId], references: [id], onDelete: SetNull)
+  childTopics     Topic[]      @relation("TopicHierarchy")
+  taskTopics      TaskTopic[]
+  examTopics      ExamTopic[]
+  sessionTopics   SessionTopic[]
+
+  @@index([workspaceId])
+  @@index([courseId])
+  @@index([parentTopicId])
+}
+
+model TaskTopic {
+  id        String   @id @default(cuid())
+  taskId    String
+  topicId   String
+  createdAt DateTime @default(now())
+
+  topic Topic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, topicId])
+  @@index([taskId])
+  @@index([topicId])
+}
+
+model ExamTopic {
+  id        String   @id @default(cuid())
+  examId    String
+  topicId   String
+  createdAt DateTime @default(now())
+
+  topic Topic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@unique([examId, topicId])
+  @@index([examId])
+  @@index([topicId])
+}
+
+model SessionTopic {
+  id        String   @id @default(cuid())
+  sessionId String
+  topicId   String
+  createdAt DateTime @default(now())
+
+  topic Topic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, topicId])
+  @@index([sessionId])
+  @@index([topicId])
+}
+
+// ============================================
+// FEATURE 5: SMART TEMPLATES
+// ============================================
+
+model Template {
+  id          String   @id @default(cuid())
+  name        String
+  category    String   // STUDY_PLAN | PROJECT | REVISION | OTHER
+  description String
+  icon        String   @default("FileText")
+  isPublic    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items TemplateItem[]
+
+  @@index([category])
+}
+
+model TemplateItem {
+  id           String   @id @default(cuid())
+  templateId   String
+  itemType     String   // TASK | PAGE | SESSION | SCHEDULE_BLOCK
+  title        String
+  description  String?
+  config       String   // JSON: { priority, duration, etc }
+  dayOffset    Int      @default(0) // Days from template application date
+  createdAt    DateTime @default(now())
+
+  template Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([templateId])
+}
+
+// ============================================
+// FEATURE 6: STUDY DEBTS (Missed Sessions Tracker)
+// ============================================
+
+model StudyDebt {
+  id                 String   @id @default(cuid())
+  workspaceId        String
+  courseId           String?
+  plannedSessionId   String?  // Reference to missed planned session
+  durationMinutes    Int
+  dueDate            DateTime
+  isPaid             Boolean  @default(false)
+  paidMinutes        Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  repayments DebtRepayment[]
+
+  @@index([workspaceId])
+  @@index([courseId])
+  @@index([isPaid])
+}
+
+model DebtRepayment {
+  id              String   @id @default(cuid())
+  studyDebtId     String
+  sessionId       String   // Actual study session that repaid
+  minutesRepaid   Int
+  createdAt       DateTime @default(now())
+
+  studyDebt StudyDebt @relation(fields: [studyDebtId], references: [id], onDelete: Cascade)
+
+  @@index([studyDebtId])
+  @@index([sessionId])
+}
+
+// ============================================
+// FEATURE 7: EXAM STORYBOARD
+// ============================================
+
+model SyllabusItem {
+  id          String   @id @default(cuid())
+  examId      String
+  title       String
+  description String?
+  isCompleted Boolean  @default(false)
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([examId])
+}
+
+model PastQuestion {
+  id          String   @id @default(cuid())
+  examId      String
+  question    String
+  difficulty  String   // EASY | MEDIUM | HARD
+  isAttempted Boolean  @default(false)
+  isCorrect   Boolean?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([examId])
+}
+
+model CheatSheetSection {
+  id        String   @id @default(cuid())
+  examId    String
+  title     String
+  content   String
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([examId])
+}
+
+// ============================================
+// FEATURE 8: CALENDAR SYNC
+// ============================================
+
+model CalendarSource {
+  id          String   @id @default(cuid())
+  workspaceId String
+  provider    String   // GOOGLE | OUTLOOK | ICAL | OTHER
+  accountEmail String
+  isActive    Boolean  @default(true)
+  lastSyncAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  events CalendarEvent[]
+
+  @@index([workspaceId])
+}
+
+model CalendarEvent {
+  id               String   @id @default(cuid())
+  calendarSourceId String
+  externalId       String   // ID from external calendar
+  title            String
+  startTime        DateTime
+  endTime          DateTime
+  location         String?
+  description      String?
+  isSynced         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  calendarSource CalendarSource @relation(fields: [calendarSourceId], references: [id], onDelete: Cascade)
+
+  @@unique([calendarSourceId, externalId])
+  @@index([calendarSourceId])
+  @@index([startTime])
+}
+
+// ============================================
+// FEATURE 9: WORKSPACE PREFERENCES
+// ============================================
+
+model WorkspacePreferences {
+  id                String   @id @default(cuid())
+  workspaceId       String   @unique
+  crisisModeEnabled Boolean  @default(false)
+  crisisModeStartDate DateTime?
+  crisisModeDays    Int      @default(7)
+  crisisDaysThreshold Int    @default(7) // Show only items due within X days
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([workspaceId])
 }
