@@ -25,6 +25,10 @@ import {
   Flame,
   ChevronLeft,
   ChevronRight,
+  Search,
+  Plus,
+  X,
+  BookOpen,
 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 
@@ -67,18 +71,43 @@ export function Sidebar({ workspaceId, workspaceName, pages }: SidebarProps) {
   const pathname = usePathname();
   const [pageState, setPageState] = useState(pages);
   const [isPending, startTransition] = useTransition();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("sidebar-collapsed") === "true";
+    }
+    return false;
+  });
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(["nav", "advanced", "favorites", "pages"]));
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
 
   useEffect(() => {
     setPageState(pages);
   }, [pages]);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("sidebar-collapsed", String(isCollapsed));
+    }
+  }, [isCollapsed]);
+
+  // Filter pages based on search
+  const filteredPages = useMemo(() => {
+    if (!searchQuery.trim()) return pageState;
+    const query = searchQuery.toLowerCase();
+    return pageState.filter(
+      (page) =>
+        page.title.toLowerCase().includes(query) ||
+        page.type.toLowerCase().includes(query)
+    );
+  }, [pageState, searchQuery]);
+
+  const filteredTree = useMemo(() => buildTree(filteredPages), [filteredPages]);
+
   const favorites = useMemo(
-    () => pageState.filter((page) => page.isFavorite).sort((a, b) => a.title.localeCompare(b.title)),
-    [pageState],
+    () => filteredPages.filter((page) => page.isFavorite).sort((a, b) => a.title.localeCompare(b.title)),
+    [filteredPages],
   );
-  const tree = useMemo(() => buildTree(pageState), [pageState]);
 
   const navItems = [
     { label: "Dashboard", href: `/workspace/${workspaceId}`, icon: LayoutDashboard },
@@ -236,13 +265,25 @@ export function Sidebar({ workspaceId, workspaceName, pages }: SidebarProps) {
   }
 
   return (
-    <div className={`flex h-full flex-col bg-white dark:bg-sidebar transition-all duration-200 ${isCollapsed ? "w-16" : "w-64"}`}>
-      <div className={`border-b border-gray-200 dark:border-gray-800 ${isCollapsed ? "p-2" : "p-4"} relative`}>
+    <div className={`flex h-full flex-col bg-white dark:bg-sidebar transition-all duration-300 ease-in-out ${isCollapsed ? "w-16" : "w-64"} shadow-sm`}>
+      {/* Header */}
+      <div className={`border-b border-gray-200 dark:border-gray-800 ${isCollapsed ? "p-2" : "p-4"} relative flex-shrink-0`}>
         {!isCollapsed ? (
           <>
-            <h2 className="text-xl font-bold text-blue-600 dark:text-blue-400">NOTELOFT</h2>
-            <p className="mt-1 text-xs font-semibold text-gray-600 dark:text-gray-400">Student Workspace OS</p>
-            <p className="mt-2 text-sm font-semibold text-gray-900 dark:text-gray-200">{workspaceName}</p>
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h2 className="text-xl font-bold text-blue-600 dark:text-blue-400">NOTELOFT</h2>
+                <p className="mt-0.5 text-xs font-semibold text-gray-600 dark:text-gray-400">Student Workspace OS</p>
+              </div>
+              <button
+                onClick={() => setShowSearch(!showSearch)}
+                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                title="Search pages"
+              >
+                <Search className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              </button>
+            </div>
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-200 truncate">{workspaceName}</p>
           </>
         ) : (
           <div className="flex items-center justify-center">
@@ -251,7 +292,7 @@ export function Sidebar({ workspaceId, workspaceName, pages }: SidebarProps) {
         )}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className={`absolute ${isCollapsed ? "top-2 right-2" : "top-4 right-2"} p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors`}
+          className={`absolute ${isCollapsed ? "top-2 right-2" : "top-4 right-2"} p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors z-10`}
           title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {isCollapsed ? (
@@ -262,7 +303,33 @@ export function Sidebar({ workspaceId, workspaceName, pages }: SidebarProps) {
         </button>
       </div>
 
-      <nav className="flex-1 space-y-3 overflow-y-auto p-3">
+      {/* Search Bar */}
+      {showSearch && !isCollapsed && (
+        <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search pages..."
+              className="w-full pl-9 pr-8 py-2 text-sm border-2 border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400"
+              autoFocus
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <X className="w-3 h-3 text-gray-400" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      <nav className="flex-1 space-y-3 overflow-y-auto p-3 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700 scrollbar-track-transparent">
+        {/* Main Navigation */}
         <div className="space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -271,19 +338,24 @@ export function Sidebar({ workspaceId, workspaceName, pages }: SidebarProps) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center rounded-lg text-sm font-semibold transition-colors ${
+                className={`group flex items-center rounded-lg text-sm font-semibold transition-all duration-200 ${
                   isCollapsed 
-                    ? "justify-center px-2 py-2" 
-                    : "gap-3 px-3 py-2"
+                    ? "justify-center px-2 py-2.5" 
+                    : "gap-3 px-3 py-2.5"
                 } ${
                   active
-                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
-                    : "text-gray-900 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 shadow-sm"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/50"
                 }`}
                 title={isCollapsed ? item.label : undefined}
               >
-                <Icon className="h-4 w-4 flex-shrink-0" />
-                {!isCollapsed && <span>{item.label}</span>}
+                <Icon className={`h-4 w-4 flex-shrink-0 transition-transform ${active ? "scale-110" : "group-hover:scale-105"}`} />
+                {!isCollapsed && (
+                  <span className="truncate flex-1">{item.label}</span>
+                )}
+                {active && !isCollapsed && (
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400" />
+                )}
               </Link>
             );
           })}
@@ -291,7 +363,7 @@ export function Sidebar({ workspaceId, workspaceName, pages }: SidebarProps) {
 
         {/* Advanced Features Section */}
         {!isCollapsed && (
-          <div className="mt-6">
+          <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-800">
             <button
               onClick={() => {
                 const newExpanded = new Set(expandedSections);
@@ -302,17 +374,19 @@ export function Sidebar({ workspaceId, workspaceName, pages }: SidebarProps) {
                 }
                 setExpandedSections(newExpanded);
               }}
-              className="flex items-center justify-between w-full px-3 mb-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg py-1 transition-colors"
+              className="flex items-center justify-between w-full px-3 mb-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg py-1.5 transition-colors group"
             >
-              <span className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">Advanced</span>
-              {expandedSections.has("advanced") ? (
-                <ChevronRight className="w-3 h-3 text-gray-400 rotate-90" />
-              ) : (
-                <ChevronRight className="w-3 h-3 text-gray-400" />
-              )}
+              <span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300">
+                Advanced
+              </span>
+              <ChevronRight
+                className={`w-3 h-3 text-gray-400 transition-transform duration-200 ${
+                  expandedSections.has("advanced") ? "rotate-90" : ""
+                }`}
+              />
             </button>
             {expandedSections.has("advanced") && (
-            <div className="space-y-1">
+            <div className="space-y-1 animate-in slide-in-from-top-2">
               {advancedNavItems.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.href);
@@ -320,14 +394,17 @@ export function Sidebar({ workspaceId, workspaceName, pages }: SidebarProps) {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                    className={`group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-all duration-200 ${
                       active
-                        ? "bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300"
-                        : "text-gray-900 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+                        ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 shadow-sm"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/50"
                     }`}
                   >
-                    <Icon className="h-4 w-4" />
-                    {item.label}
+                    <Icon className={`h-4 w-4 transition-transform ${active ? "scale-110" : "group-hover:scale-105"}`} />
+                    <span className="truncate flex-1">{item.label}</span>
+                    {active && (
+                      <div className="w-1.5 h-1.5 rounded-full bg-purple-600 dark:bg-purple-400" />
+                    )}
                   </Link>
                 );
               })}
@@ -338,7 +415,7 @@ export function Sidebar({ workspaceId, workspaceName, pages }: SidebarProps) {
 
         {/* Advanced items when collapsed - show as icons only */}
         {isCollapsed && (
-          <div className="mt-6 space-y-1">
+          <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-800 space-y-1">
             {advancedNavItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
@@ -346,14 +423,14 @@ export function Sidebar({ workspaceId, workspaceName, pages }: SidebarProps) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center justify-center rounded-lg px-2 py-2 text-sm font-semibold transition-colors ${
+                  className={`group flex items-center justify-center rounded-lg px-2 py-2.5 text-sm font-semibold transition-all duration-200 ${
                     active
-                      ? "bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300"
-                      : "text-gray-900 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 shadow-sm"
+                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/50"
                   }`}
                   title={item.label}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className={`h-4 w-4 transition-transform ${active ? "scale-110" : "group-hover:scale-105"}`} />
                 </Link>
               );
             })}
@@ -361,7 +438,7 @@ export function Sidebar({ workspaceId, workspaceName, pages }: SidebarProps) {
         )}
 
         {favorites.length > 0 && !isCollapsed && (
-          <div className="space-y-1">
+          <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-800">
             <button
               onClick={() => {
                 const newExpanded = new Set(expandedSections);
@@ -372,29 +449,31 @@ export function Sidebar({ workspaceId, workspaceName, pages }: SidebarProps) {
                 }
                 setExpandedSections(newExpanded);
               }}
-              className="flex items-center justify-between w-full px-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg py-1 transition-colors"
+              className="flex items-center justify-between w-full px-3 mb-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg py-1.5 transition-colors group"
             >
-              <span className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">Favorites</span>
-              {expandedSections.has("favorites") ? (
-                <ChevronRight className="w-3 h-3 text-gray-400 rotate-90" />
-              ) : (
-                <ChevronRight className="w-3 h-3 text-gray-400" />
-              )}
+              <span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300">
+                Favorites
+              </span>
+              <ChevronRight
+                className={`w-3 h-3 text-gray-400 transition-transform duration-200 ${
+                  expandedSections.has("favorites") ? "rotate-90" : ""
+                }`}
+              />
             </button>
             {expandedSections.has("favorites") && (
-            <div className="space-y-1">
+            <div className="space-y-1 animate-in slide-in-from-top-2">
               {favorites.map((page) => (
                 <Link
                   key={page.id}
                   href={`/workspace/${workspaceId}/pages/${page.id}`}
-                  className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium ${
+                  className={`group flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 ${
                     pathname === `/workspace/${workspaceId}/pages/${page.id}`
-                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
-                      : "text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800/50"
+                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 shadow-sm"
+                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/50"
                   }`}
                 >
-                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                  <span className="truncate">{page.title}</span>
+                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400 flex-shrink-0" />
+                  <span className="truncate flex-1">{page.title}</span>
                 </Link>
               ))}
             </div>
@@ -404,27 +483,27 @@ export function Sidebar({ workspaceId, workspaceName, pages }: SidebarProps) {
 
         {/* Favorites when collapsed - show as icons only */}
         {favorites.length > 0 && isCollapsed && (
-          <div className="mt-6 space-y-1">
+          <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-800 space-y-1">
             {favorites.slice(0, 5).map((page) => (
               <Link
                 key={page.id}
                 href={`/workspace/${workspaceId}/pages/${page.id}`}
-                className={`flex items-center justify-center rounded-lg px-2 py-2 text-sm font-medium ${
+                className={`group flex items-center justify-center rounded-lg px-2 py-2.5 text-sm font-medium transition-all duration-200 ${
                   pathname === `/workspace/${workspaceId}/pages/${page.id}`
-                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
-                    : "text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800/50"
+                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 shadow-sm"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/50"
                 }`}
                 title={page.title}
               >
-                <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                <Star className={`h-4 w-4 fill-amber-400 text-amber-400 transition-transform ${pathname === `/workspace/${workspaceId}/pages/${page.id}` ? "scale-110" : "group-hover:scale-105"}`} />
               </Link>
             ))}
           </div>
         )}
 
-        {pageState.length > 0 && !isCollapsed && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between px-3">
+        {filteredPages.length > 0 && !isCollapsed && (
+          <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-800">
+            <div className="flex items-center justify-between px-3 mb-2">
               <button
                 onClick={() => {
                   const newExpanded = new Set(expandedSections);
@@ -435,62 +514,90 @@ export function Sidebar({ workspaceId, workspaceName, pages }: SidebarProps) {
                   }
                   setExpandedSections(newExpanded);
                 }}
-                className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg py-1 px-2 -ml-2 transition-colors"
+                className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg py-1.5 px-2 -ml-2 transition-colors group"
               >
-                <span className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">Pages</span>
-                {expandedSections.has("pages") ? (
-                  <ChevronRight className="w-3 h-3 text-gray-400 rotate-90" />
-                ) : (
-                  <ChevronRight className="w-3 h-3 text-gray-400" />
-                )}
+                <BookOpen className="w-3 h-3 text-gray-400" />
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300">
+                  Pages
+                </span>
+                <ChevronRight
+                  className={`w-3 h-3 text-gray-400 transition-transform duration-200 ${
+                    expandedSections.has("pages") ? "rotate-90" : ""
+                  }`}
+                />
               </button>
-              <Link href={`/workspace/${workspaceId}/pages/new`} className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline">
-                + New
+              <Link
+                href={`/workspace/${workspaceId}/pages/new`}
+                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-blue-600 dark:text-blue-400"
+                title="New page"
+              >
+                <Plus className="w-4 h-4" />
               </Link>
             </div>
             {expandedSections.has("pages") && (
-            <DragDropContext onDragEnd={handleDragEnd}>{renderTree(tree)}</DragDropContext>
+            <div className="animate-in slide-in-from-top-2">
+              <DragDropContext onDragEnd={handleDragEnd}>{renderTree(filteredTree)}</DragDropContext>
+            </div>
             )}
+            {searchQuery && filteredPages.length === 0 && (
+              <div className="px-3 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                No pages found matching "{searchQuery}"
+              </div>
+            )}
+          </div>
+        )}
+
+        {filteredPages.length === 0 && !searchQuery && !isCollapsed && (
+          <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-800 px-3">
+            <Link
+              href={`/workspace/${workspaceId}/pages/new`}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Create your first page
+            </Link>
           </div>
         )}
       </nav>
 
-      <div className="border-t border-gray-200 dark:border-gray-800 space-y-1">
+      {/* Footer */}
+      <div className="border-t border-gray-200 dark:border-gray-800 space-y-1 flex-shrink-0 mt-auto">
         <Link
           href="/profile"
-          className={`flex items-center rounded-lg text-sm font-semibold transition-colors ${
+          className={`group flex items-center rounded-lg text-sm font-semibold transition-all duration-200 ${
             isCollapsed 
-              ? "justify-center px-2 py-2 mx-2 mt-2" 
-              : "gap-3 px-3 py-2 mx-3 mt-2"
+              ? "justify-center px-2 py-2.5 mx-2 mt-2" 
+              : "gap-3 px-3 py-2.5 mx-3 mt-2"
           } ${
             pathname === "/profile"
-              ? "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
-              : "text-gray-900 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+              ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 shadow-sm"
+              : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/50"
           }`}
           title={isCollapsed ? "Profile" : undefined}
         >
-          <User className="h-4 w-4" />
+          <User className={`h-4 w-4 transition-transform ${pathname === "/profile" ? "scale-110" : "group-hover:scale-105"}`} />
           {!isCollapsed && <span>Profile</span>}
         </Link>
         <Link
           href="/settings"
-          className={`flex items-center rounded-lg text-sm font-semibold transition-colors ${
+          className={`group flex items-center rounded-lg text-sm font-semibold transition-all duration-200 ${
             isCollapsed 
-              ? "justify-center px-2 py-2 mx-2" 
-              : "gap-3 px-3 py-2 mx-3"
+              ? "justify-center px-2 py-2.5 mx-2" 
+              : "gap-3 px-3 py-2.5 mx-3"
           } ${
             pathname === "/settings"
-              ? "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
-              : "text-gray-900 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+              ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 shadow-sm"
+              : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/50"
           }`}
           title={isCollapsed ? "Settings" : undefined}
         >
-          <Settings className="h-4 w-4" />
+          <Settings className={`h-4 w-4 transition-transform ${pathname === "/settings" ? "scale-110" : "group-hover:scale-105"}`} />
           {!isCollapsed && <span>Settings</span>}
         </Link>
         {!isCollapsed && (
-          <div className="px-4 pb-3 pt-2 text-center text-xs font-semibold text-gray-600 dark:text-gray-300">
-            NOTELOFT V1
+          <div className="px-4 pb-3 pt-2 text-center">
+            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400">NOTELOFT</div>
+            <div className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">v1.0.0</div>
           </div>
         )}
       </div>
