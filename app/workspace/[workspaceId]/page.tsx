@@ -1,8 +1,12 @@
 import { prisma } from "@/lib/db";
 import { SemesterDashboard } from "@/components/dashboard/SemesterDashboard";
+import { redirect } from "next/navigation";
 
 export default async function DashboardPage({ params }: { params: { workspaceId: string } }) {
   const { workspaceId } = params;
+
+  // Check if onboarding needed (in real app, check database)
+  // For now, we'll let the client-side handle it
 
   // Demo workspace: render dashboard shell without requiring a DB record
   if (workspaceId === "demo") {

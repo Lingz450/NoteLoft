@@ -14,6 +14,11 @@ import { useBossFights } from "@/lib/hooks/useBossFight";
 import { StudyRunCard } from "@/components/study-runs/StudyRunCard";
 import { DebtCard } from "@/components/study-debts/DebtCard";
 import { BossHealthBar } from "@/components/boss-fights/BossHealthBar";
+import { TodayPanel } from "@/components/dashboard/TodayPanel";
+import { ProgressCard } from "@/components/dashboard/ProgressCard";
+import { QuickAdd } from "@/components/common/QuickAdd";
+import { UndoToast } from "@/components/common/UndoToast";
+import { KeyboardShortcuts } from "@/components/common/KeyboardShortcuts";
 
 type WorkspaceSummary = {
   id: string;
@@ -142,6 +147,11 @@ export function SemesterDashboard({
 
   return (
     <div className="p-6 space-y-6">
+      {/* Global Components */}
+      <QuickAdd workspaceId={workspace.id} />
+      <UndoToast />
+      <KeyboardShortcuts />
+
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -151,6 +161,9 @@ export function SemesterDashboard({
           Overview of your courses, tasks, and upcoming exams
         </p>
       </div>
+
+      {/* Today Panel - Most Important */}
+      <TodayPanel workspaceId={workspace.id} />
 
       {/* Quick actions */}
       <div className="flex gap-2 flex-wrap">
@@ -174,9 +187,14 @@ export function SemesterDashboard({
         </Button>
       </div>
 
-      {/* Focus Cards Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <FocusCards workspaceId={workspace.id} sessions={liveFocusSessions} />
+      {/* Progress & Focus Cards Row */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="md:col-span-1">
+          <ProgressCard workspaceId={workspace.id} />
+        </div>
+        <div className="md:col-span-3">
+          <FocusCards workspaceId={workspace.id} sessions={liveFocusSessions} />
+        </div>
       </div>
 
       {/* Advanced Features Widgets */}
