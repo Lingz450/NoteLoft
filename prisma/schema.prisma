@@ -47,6 +47,7 @@ model User {
 
   // Relations
   workspaces Workspace[]
+  workspaceMembers WorkspaceMember[]
 }
 
 // ============================================
@@ -69,6 +70,7 @@ model Workspace {
   timetableSlots   TimetableSlot[]
   assessmentItems  AssessmentItem[]
   studySessions    StudySession[]
+  members          WorkspaceMember[]
 
   @@index([userId])
 }
@@ -95,6 +97,9 @@ model Page {
   blocks       Block[]
   comments     Comment[]
   revisions    PageRevision[]
+  backlinksFrom Backlink[] @relation("BacklinksFrom")
+  backlinksTo   Backlink[] @relation("BacklinksTo")
+  inlineDatabases InlineDatabase[]
 
   @@index([workspaceId])
   @@index([parentId])
@@ -702,4 +707,74 @@ model ActivityLog {
   @@index([workspaceId])
   @@index([createdAt])
   @@index([targetType, targetId])
+}
+
+// ============================================
+// ADDITIONAL NOTION-CLASS FEATURES
+// ============================================
+
+// Backlinks - Track page connections
+model Backlink {
+  id          String   @id @default(cuid())
+  fromPageId  String   // Page that contains the link
+  toPageId    String   // Page being linked to
+  context     String?  // Surrounding text where link appears
+  createdAt   DateTime @default(now())
+
+  fromPage Page @relation("BacklinksFrom", fields: [fromPageId], references: [id], onDelete: Cascade)
+  toPage   Page @relation("BacklinksTo", fields: [toPageId], references: [id], onDelete: Cascade)
+
+  @@unique([fromPageId, toPageId])
+  @@index([fromPageId])
+  @@index([toPageId])
+}
+
+// Shared Workspaces - Multi-user collaboration
+model WorkspaceMember {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String?  // Nullable for now (anonymous access)
+  email       String?  // For invitations
+  role        String   @default("MEMBER") // OWNER | ADMIN | MEMBER | VIEWER
+  invitedBy   String?  // User ID who invited
+  joinedAt    DateTime @default(now())
+  lastActive  DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([workspaceId, userId])
+  @@unique([workspaceId, email])
+  @@index([workspaceId])
+  @@index([userId])
+}
+
+// Inline Databases - Databases embedded in pages
+model InlineDatabase {
+  id          String   @id @default(cuid())
+  pageId      String
+  title       String
+  viewType    String   @default("TABLE") // TABLE | BOARD | CALENDAR | GALLERY
+  properties  String   // JSON: column definitions
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@index([pageId])
+}
+
+// Database Rows - Rows in inline databases
+model DatabaseRow {
+  id           String   @id @default(cuid())
+  databaseId   String
+  properties   String   // JSON: { columnId: value }
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  database InlineDatabase @relation(fields: [databaseId], references: [id], onDelete: Cascade)
+
+  @@index([databaseId])
+  @@index([order])
 }

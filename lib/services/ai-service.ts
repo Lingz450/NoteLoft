@@ -120,15 +120,87 @@ export async function generateStudySuggestion(workspaceId: string): Promise<{
   description: string;
   priority: "high" | "medium" | "low";
   suggestedDuration: number;
+  actionItems: string[];
 }> {
   // TODO: Integrate with OpenAI API and workspace context
+  // This would gather:
+  // - Upcoming exams (sorted by date)
+  // - Recent study sessions
+  // - Task completion rates
+  // - Course progress
+  // - Study debts
+  // Then generate personalized suggestions
 
-  // Placeholder suggestion
+  // Placeholder suggestion with context
   return {
     title: "Review Data Structures - Exam in 3 days",
     description: "Focus on trees and graph algorithms. You've logged 2 hours so far, aim for 2 more sessions before the exam.",
     priority: "high",
     suggestedDuration: 50,
+    actionItems: [
+      "Review binary tree traversal algorithms",
+      "Practice graph problems from past exams",
+      "Complete 3 practice problems",
+      "Create summary notes for quick review",
+    ],
+  };
+}
+
+/**
+ * AI Study Agent - Comprehensive study planning
+ */
+export async function getAIStudyPlan(workspaceId: string): Promise<{
+  today: {
+    focus: string;
+    sessions: Array<{ course: string; duration: number; topics: string[] }>;
+    tasks: string[];
+  };
+  thisWeek: {
+    goals: string[];
+    priorities: string[];
+  };
+  insights: string[];
+}> {
+  // TODO: Full AI integration with workspace context analysis
+
+  return {
+    today: {
+      focus: "Data Structures exam preparation",
+      sessions: [
+        {
+          course: "CS 201",
+          duration: 50,
+          topics: ["Binary Trees", "Graph Algorithms"],
+        },
+        {
+          course: "Math 101",
+          duration: 30,
+          topics: ["Linear Algebra Review"],
+        },
+      ],
+      tasks: [
+        "Complete practice problems 1-5",
+        "Review lecture notes from week 8",
+        "Create flashcards for key terms",
+      ],
+    },
+    thisWeek: {
+      goals: [
+        "Complete all pending assignments",
+        "Study 10 hours for Data Structures exam",
+        "Review all course materials",
+      ],
+      priorities: [
+        "Data Structures exam (3 days)",
+        "Math assignment (5 days)",
+        "Project proposal (7 days)",
+      ],
+    },
+    insights: [
+      "You're ahead on Math but behind on Data Structures",
+      "Consider joining a study group for the exam",
+      "Your study sessions are most productive in the morning",
+    ],
   };
 }
 
