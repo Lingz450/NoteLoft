@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Card } from "@/components/common/Card";
 import { Button } from "@/components/common/Button";
-import { Flame, Clock, BookOpen, Zap } from "lucide-react";
+import { Flame, Clock, BookOpen, Zap, TrendingUp, Target, Award } from "lucide-react";
 
 type FocusSession = {
   id: string;
@@ -120,9 +120,37 @@ export function FocusCards({ workspaceId, sessions }: FocusCardsProps) {
           <span className="text-xs text-gray-500 dark:text-gray-400">Last 7 days</span>
         </div>
         {courseStats.length === 0 ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            No study sessions recorded yet
-          </p>
+          <div className="space-y-4">
+            <div className="text-center py-6">
+              <BookOpen className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-700" />
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+                No study sessions recorded yet
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-500 mb-4">
+                Start tracking your study time to see insights here
+              </p>
+            </div>
+            <div className="space-y-2 p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-900/20">
+              <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                <span>Track time spent on each course</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                <div className="w-1.5 h-1.5 rounded-full bg-purple-500"></div>
+                <span>Identify which courses need more attention</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                <span>Monitor your weekly study goals</span>
+              </div>
+            </div>
+            <Link href={`/workspace/${workspaceId}/sessions`}>
+              <Button variant="outline" className="w-full" size="sm">
+                <Clock className="w-4 h-4 mr-2" />
+                Start Your First Session
+              </Button>
+            </Link>
+          </div>
         ) : (
           <div className="space-y-3">
             {courseStats.slice(0, 5).map((course) => {
@@ -165,9 +193,9 @@ export function FocusCards({ workspaceId, sessions }: FocusCardsProps) {
       </Card>
 
       {/* Today&apos;s Focus */}
-      <Card className="p-5">
+      <Card className="p-5 bg-gradient-to-br from-yellow-50/50 to-orange-50/50 dark:from-yellow-900/10 dark:to-orange-900/10 border-2 border-yellow-200/50 dark:border-yellow-800/30">
         <div className="flex items-center gap-2 mb-4">
-          <Zap className="w-5 h-5 text-yellow-600" />
+          <Zap className="w-5 h-5 text-yellow-600 dark:text-yellow-500" />
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             Today&apos;s Focus
           </h2>
@@ -176,8 +204,8 @@ export function FocusCards({ workspaceId, sessions }: FocusCardsProps) {
           Keep your momentum going with a focused study session
         </p>
         {suggestedCourse ? (
-          <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg mb-4">
-            <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+          <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg mb-4 border border-blue-200 dark:border-blue-800">
+            <div className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-2 uppercase tracking-wide">
               Suggested session
             </div>
             <div className="flex items-center gap-2 mb-3">
@@ -185,7 +213,7 @@ export function FocusCards({ workspaceId, sessions }: FocusCardsProps) {
                 className="w-3 h-3 rounded-full"
                 style={{ backgroundColor: suggestedCourse.color }}
               />
-              <span className="font-semibold text-gray-900 dark:text-white">
+              <span className="font-bold text-gray-900 dark:text-white">
                 {suggestedCourse.code}
               </span>
             </div>
@@ -194,13 +222,53 @@ export function FocusCards({ workspaceId, sessions }: FocusCardsProps) {
             </div>
           </div>
         ) : (
-          <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg mb-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Start your first study session to track your progress
-            </p>
+          <div className="space-y-4">
+            <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-700">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
+                  <Zap className="w-5 h-5 text-yellow-600 dark:text-yellow-500" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
+                    Ready to start?
+                  </p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                    Begin your first study session to track your progress and build your streak
+                  </p>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-500">
+                      <div className="w-1 h-1 rounded-full bg-gray-400"></div>
+                      <span>Track your study time</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-500">
+                      <div className="w-1 h-1 rounded-full bg-gray-400"></div>
+                      <span>Build a daily streak</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-500">
+                      <div className="w-1 h-1 rounded-full bg-gray-400"></div>
+                      <span>See your progress</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="p-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="text-lg font-bold text-gray-900 dark:text-white">25</div>
+                <div className="text-[10px] text-gray-500 dark:text-gray-400">min</div>
+              </div>
+              <div className="p-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="text-lg font-bold text-gray-900 dark:text-white">50</div>
+                <div className="text-[10px] text-gray-500 dark:text-gray-400">min</div>
+              </div>
+              <div className="p-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="text-lg font-bold text-gray-900 dark:text-white">90</div>
+                <div className="text-[10px] text-gray-500 dark:text-gray-400">min</div>
+              </div>
+            </div>
           </div>
         )}
-        <Button asChild className="w-full">
+        <Button asChild className="w-full mt-4 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold shadow-lg">
           <Link href={`/workspace/${workspaceId}/sessions`}>
             <Clock className="w-4 h-4 mr-2" />
             Start Study Session
