@@ -237,17 +237,21 @@ export function Sidebar({ workspaceId, workspaceName, pages }: SidebarProps) {
 
   return (
     <div className={`flex h-full flex-col bg-white dark:bg-sidebar transition-all duration-200 ${isCollapsed ? "w-16" : "w-64"}`}>
-      <div className="border-b border-gray-200 dark:border-gray-800 p-4 relative">
-        {!isCollapsed && (
+      <div className={`border-b border-gray-200 dark:border-gray-800 ${isCollapsed ? "p-2" : "p-4"} relative`}>
+        {!isCollapsed ? (
           <>
             <h2 className="text-xl font-bold text-blue-600 dark:text-blue-400">NOTELOFT</h2>
             <p className="mt-1 text-xs font-semibold text-gray-600 dark:text-gray-400">Student Workspace OS</p>
             <p className="mt-2 text-sm font-semibold text-gray-900 dark:text-gray-200">{workspaceName}</p>
           </>
+        ) : (
+          <div className="flex items-center justify-center">
+            <h2 className="text-lg font-bold text-blue-600 dark:text-blue-400">N</h2>
+          </div>
         )}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="absolute top-4 right-2 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          className={`absolute ${isCollapsed ? "top-2 right-2" : "top-4 right-2"} p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors`}
           title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {isCollapsed ? (
@@ -267,7 +271,11 @@ export function Sidebar({ workspaceId, workspaceName, pages }: SidebarProps) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                className={`flex items-center rounded-lg text-sm font-semibold transition-colors ${
+                  isCollapsed 
+                    ? "justify-center px-2 py-2" 
+                    : "gap-3 px-3 py-2"
+                } ${
                   active
                     ? "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
                     : "text-gray-900 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -275,35 +283,62 @@ export function Sidebar({ workspaceId, workspaceName, pages }: SidebarProps) {
                 title={isCollapsed ? item.label : undefined}
               >
                 <Icon className="h-4 w-4 flex-shrink-0" />
-                {!isCollapsed && item.label}
+                {!isCollapsed && <span>{item.label}</span>}
               </Link>
             );
           })}
         </div>
 
         {/* Advanced Features Section */}
-        <div className="mt-6">
-          <button
-            onClick={() => {
-              const newExpanded = new Set(expandedSections);
-              if (newExpanded.has("advanced")) {
-                newExpanded.delete("advanced");
-              } else {
-                newExpanded.add("advanced");
-              }
-              setExpandedSections(newExpanded);
-            }}
-            className="flex items-center justify-between w-full px-3 mb-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg py-1 transition-colors"
-          >
-            <span className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">Advanced</span>
-            {expandedSections.has("advanced") ? (
-              <ChevronRight className="w-3 h-3 text-gray-400 rotate-90" />
-            ) : (
-              <ChevronRight className="w-3 h-3 text-gray-400" />
+        {!isCollapsed && (
+          <div className="mt-6">
+            <button
+              onClick={() => {
+                const newExpanded = new Set(expandedSections);
+                if (newExpanded.has("advanced")) {
+                  newExpanded.delete("advanced");
+                } else {
+                  newExpanded.add("advanced");
+                }
+                setExpandedSections(newExpanded);
+              }}
+              className="flex items-center justify-between w-full px-3 mb-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg py-1 transition-colors"
+            >
+              <span className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">Advanced</span>
+              {expandedSections.has("advanced") ? (
+                <ChevronRight className="w-3 h-3 text-gray-400 rotate-90" />
+              ) : (
+                <ChevronRight className="w-3 h-3 text-gray-400" />
+              )}
+            </button>
+            {expandedSections.has("advanced") && (
+            <div className="space-y-1">
+              {advancedNavItems.map((item) => {
+                const Icon = item.icon;
+                const active = isActive(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                      active
+                        ? "bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300"
+                        : "text-gray-900 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
             )}
-          </button>
-          {expandedSections.has("advanced") && (
-          <div className="space-y-1">
+          </div>
+        )}
+
+        {/* Advanced items when collapsed - show as icons only */}
+        {isCollapsed && (
+          <div className="mt-6 space-y-1">
             {advancedNavItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
@@ -311,22 +346,21 @@ export function Sidebar({ workspaceId, workspaceName, pages }: SidebarProps) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                  className={`flex items-center justify-center rounded-lg px-2 py-2 text-sm font-semibold transition-colors ${
                     active
                       ? "bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300"
                       : "text-gray-900 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
                   }`}
+                  title={item.label}
                 >
                   <Icon className="h-4 w-4" />
-                  {item.label}
                 </Link>
               );
             })}
           </div>
-          )}
-        </div>
+        )}
 
-        {favorites.length > 0 && (
+        {favorites.length > 0 && !isCollapsed && (
           <div className="space-y-1">
             <button
               onClick={() => {
@@ -368,7 +402,27 @@ export function Sidebar({ workspaceId, workspaceName, pages }: SidebarProps) {
           </div>
         )}
 
-        {pageState.length > 0 && (
+        {/* Favorites when collapsed - show as icons only */}
+        {favorites.length > 0 && isCollapsed && (
+          <div className="mt-6 space-y-1">
+            {favorites.slice(0, 5).map((page) => (
+              <Link
+                key={page.id}
+                href={`/workspace/${workspaceId}/pages/${page.id}`}
+                className={`flex items-center justify-center rounded-lg px-2 py-2 text-sm font-medium ${
+                  pathname === `/workspace/${workspaceId}/pages/${page.id}`
+                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
+                    : "text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800/50"
+                }`}
+                title={page.title}
+              >
+                <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {pageState.length > 0 && !isCollapsed && (
           <div className="space-y-2">
             <div className="flex items-center justify-between px-3">
               <button
@@ -404,29 +458,41 @@ export function Sidebar({ workspaceId, workspaceName, pages }: SidebarProps) {
       <div className="border-t border-gray-200 dark:border-gray-800 space-y-1">
         <Link
           href="/profile"
-          className={`flex items-center gap-3 rounded-lg px-3 py-2 mx-3 mt-2 text-sm font-semibold transition-colors ${
+          className={`flex items-center rounded-lg text-sm font-semibold transition-colors ${
+            isCollapsed 
+              ? "justify-center px-2 py-2 mx-2 mt-2" 
+              : "gap-3 px-3 py-2 mx-3 mt-2"
+          } ${
             pathname === "/profile"
               ? "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
               : "text-gray-900 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
           }`}
+          title={isCollapsed ? "Profile" : undefined}
         >
           <User className="h-4 w-4" />
-          Profile
+          {!isCollapsed && <span>Profile</span>}
         </Link>
         <Link
           href="/settings"
-          className={`flex items-center gap-3 rounded-lg px-3 py-2 mx-3 text-sm font-semibold transition-colors ${
+          className={`flex items-center rounded-lg text-sm font-semibold transition-colors ${
+            isCollapsed 
+              ? "justify-center px-2 py-2 mx-2" 
+              : "gap-3 px-3 py-2 mx-3"
+          } ${
             pathname === "/settings"
               ? "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
               : "text-gray-900 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
           }`}
+          title={isCollapsed ? "Settings" : undefined}
         >
           <Settings className="h-4 w-4" />
-          Settings
+          {!isCollapsed && <span>Settings</span>}
         </Link>
-        <div className="px-4 pb-3 pt-2 text-center text-xs font-semibold text-gray-600 dark:text-gray-300">
-          NOTELOFT V1
-        </div>
+        {!isCollapsed && (
+          <div className="px-4 pb-3 pt-2 text-center text-xs font-semibold text-gray-600 dark:text-gray-300">
+            NOTELOFT V1
+          </div>
+        )}
       </div>
     </div>
   );

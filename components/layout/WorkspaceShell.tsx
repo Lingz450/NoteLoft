@@ -24,7 +24,8 @@ export function WorkspaceShell({ sidebar, topbar, children }: WorkspaceShellProp
       }`}
     >
       {/* Desktop Sidebar - hidden on mobile */}
-      <div className={`hidden lg:block w-64 bg-sidebar flex-shrink-0 overflow-y-auto ${sidebarBorderClass}`}>
+      {/* Sidebar width is controlled by the Sidebar component itself */}
+      <div className={`hidden lg:block bg-sidebar flex-shrink-0 overflow-y-auto ${sidebarBorderClass}`}>
         {sidebar}
       </div>
 
