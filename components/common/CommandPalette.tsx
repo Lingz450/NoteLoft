@@ -200,7 +200,7 @@ export function CommandPalette() {
         <Search className="w-4 h-4" />
         <span>Quick search</span>
         <kbd className="px-2 py-0.5 text-xs bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded">
-          ⌘K
+          {typeof window !== "undefined" && /Mac|iPhone|iPod|iPad/i.test(navigator.platform) ? "⌘" : "Ctrl"}K
         </kbd>
       </button>
 

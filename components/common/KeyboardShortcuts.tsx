@@ -9,37 +9,50 @@
 import { useState, useEffect } from "react";
 import { Keyboard, X } from "lucide-react";
 import { Modal } from "@/components/common/Modal";
+import { getModifierKey, getModifierKeyName, isMac } from "@/lib/utils/keyboard";
 
-const shortcuts = [
-  {
-    category: "Navigation",
-    items: [
-      { keys: ["⌘", "K"], description: "Open command palette" },
-      { keys: ["Q"], description: "Quick add" },
-      { keys: ["⌘", "Shift", "F"], description: "Focus mode" },
-    ],
-  },
-  {
-    category: "Editor",
-    items: [
-      { keys: ["⌘", "B"], description: "Bold" },
-      { keys: ["⌘", "I"], description: "Italic" },
-      { keys: ["⌘", "Enter"], description: "Submit comment" },
-      { keys: ["/"], description: "Slash commands" },
-    ],
-  },
-  {
-    category: "Actions",
-    items: [
-      { keys: ["⌘", "S"], description: "Save (auto-saves)" },
-      { keys: ["Esc"], description: "Close modal/menu" },
-      { keys: ["⌘", "Z"], description: "Undo" },
-    ],
-  },
-];
+const getShortcuts = () => {
+  const mod = getModifierKey();
+  const modName = getModifierKeyName();
+  
+  return [
+    {
+      category: "Navigation",
+      items: [
+        { keys: [mod, "K"], description: "Open command palette" },
+        { keys: ["Q"], description: "Quick add" },
+        { keys: [mod, "Shift", "F"], description: "Focus mode" },
+      ],
+    },
+    {
+      category: "Editor",
+      items: [
+        { keys: [mod, "B"], description: "Bold" },
+        { keys: [mod, "I"], description: "Italic" },
+        { keys: [mod, "Enter"], description: "Submit comment" },
+        { keys: ["/"], description: "Slash commands" },
+      ],
+    },
+    {
+      category: "Actions",
+      items: [
+        { keys: [mod, "S"], description: "Save (auto-saves)" },
+        { keys: ["Esc"], description: "Close modal/menu" },
+        { keys: [mod, "Z"], description: "Undo" },
+        { keys: [mod, "Shift", "?"], description: "Show shortcuts" },
+      ],
+    },
+  ];
+};
 
 export function KeyboardShortcuts() {
   const [isOpen, setIsOpen] = useState(false);
+  const [shortcuts, setShortcuts] = useState(getShortcuts());
+
+  useEffect(() => {
+    // Update shortcuts when component mounts (in case OS detection changes)
+    setShortcuts(getShortcuts());
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -59,7 +72,7 @@ export function KeyboardShortcuts() {
       <button
         onClick={() => setIsOpen(true)}
         className="fixed bottom-6 left-6 w-12 h-12 bg-gray-800 dark:bg-gray-700 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-700 dark:hover:bg-gray-600 transition-colors z-40"
-        title="Keyboard Shortcuts (Cmd+Shift+?)"
+        title={`Keyboard Shortcuts (${getModifierKeyName()}+Shift+?)`}
       >
         <Keyboard className="w-5 h-5" />
       </button>

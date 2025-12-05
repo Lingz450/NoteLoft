@@ -140,7 +140,7 @@ export function CommentsPanel({ targetType, targetId, workspaceId }: CommentsPan
 
         <div className="flex items-center justify-between mt-2">
           <p className="text-xs text-gray-500">
-            Tip: Use @ to mention, Cmd+Enter to submit
+            Tip: Use @ to mention, {typeof window !== "undefined" && /Mac|iPhone|iPod|iPad/i.test(navigator.platform) ? "Cmd" : "Ctrl"}+Enter to submit
           </p>
           <Button type="submit" size="sm" disabled={isLoading || !newComment.trim()}>
             <Send className="w-4 h-4 mr-2" />

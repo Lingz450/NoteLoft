@@ -83,6 +83,20 @@ export function BlockEditor({ pageId, initialContent = "", onSave, placeholder }
           return true;
         }
         
+        // Bold: Cmd/Ctrl+B (TipTap handles this by default, but we ensure it works)
+        if ((event.metaKey || event.ctrlKey) && event.key === "b" && !event.shiftKey) {
+          event.preventDefault();
+          editor?.chain().focus().toggleBold().run();
+          return true;
+        }
+        
+        // Italic: Cmd/Ctrl+I (TipTap handles this by default, but we ensure it works)
+        if ((event.metaKey || event.ctrlKey) && event.key === "i" && !event.shiftKey) {
+          event.preventDefault();
+          editor?.chain().focus().toggleItalic().run();
+          return true;
+        }
+        
         // Additional keyboard shortcuts
         if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key === "P") {
           event.preventDefault();
@@ -147,7 +161,7 @@ export function BlockEditor({ pageId, initialContent = "", onSave, placeholder }
           className={`p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 ${
             editor.isActive("bold") ? "bg-gray-200 dark:bg-gray-700" : ""
           }`}
-          title="Bold (Cmd+B)"
+          title={`Bold (${typeof window !== "undefined" && /Mac|iPhone|iPod|iPad/i.test(navigator.platform) ? "Cmd" : "Ctrl"}+B)`}
         >
           <Bold className="w-4 h-4" />
         </button>
@@ -157,7 +171,7 @@ export function BlockEditor({ pageId, initialContent = "", onSave, placeholder }
           className={`p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 ${
             editor.isActive("italic") ? "bg-gray-200 dark:bg-gray-700" : ""
           }`}
-          title="Italic (Cmd+I)"
+          title={`Italic (${typeof window !== "undefined" && /Mac|iPhone|iPod|iPad/i.test(navigator.platform) ? "Cmd" : "Ctrl"}+I)`}
         >
           <Italic className="w-4 h-4" />
         </button>

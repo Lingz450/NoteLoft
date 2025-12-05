@@ -43,7 +43,7 @@ export function FocusMode({ children, onExit }: FocusModeProps) {
         <button
           onClick={() => setIsActive(true)}
           className="absolute top-4 right-4 p-2 rounded-lg bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors z-10"
-          title="Enter Focus Mode (Cmd+Shift+F)"
+          title={`Enter Focus Mode (${typeof window !== "undefined" && /Mac|iPhone|iPod|iPad/i.test(navigator.platform) ? "Cmd" : "Ctrl"}+Shift+F)`}
         >
           <Maximize2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
         </button>
