@@ -18,6 +18,11 @@ import {
   User,
   Settings,
   Sparkles,
+  Target,
+  Swords,
+  Users,
+  Network,
+  Flame,
 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 
@@ -81,6 +86,14 @@ export function Sidebar({ workspaceId, workspaceName, pages }: SidebarProps) {
     { label: "Schedule", href: `/workspace/${workspaceId}/schedule`, icon: Calendar },
     { label: "Stats", href: `/workspace/${workspaceId}/stats`, icon: BarChart2 },
     { label: "Templates", href: "/templates", icon: Sparkles },
+  ];
+
+  const advancedNavItems = [
+    { label: "Study Runs", href: `/workspace/${workspaceId}/study-runs`, icon: Target },
+    { label: "Boss Fights", href: `/workspace/${workspaceId}/boss-fights`, icon: Swords },
+    { label: "Focus Rooms", href: `/workspace/${workspaceId}/focus-rooms`, icon: Users },
+    { label: "Topics", href: `/workspace/${workspaceId}/topics`, icon: Network },
+    { label: "Study Debts", href: `/workspace/${workspaceId}/study-debts`, icon: Flame },
   ];
 
   const isActive = (href: string) => {
@@ -227,24 +240,53 @@ export function Sidebar({ workspaceId, workspaceName, pages }: SidebarProps) {
       </div>
 
       <nav className="flex-1 space-y-3 overflow-y-auto p-3">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const active = isActive(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
-                active
-                  ? "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
-                  : "text-gray-900 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
-              }`}
-            >
-              <Icon className="h-4 w-4" />
-              {item.label}
-            </Link>
-          );
-        })}
+        <div className="space-y-1">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                  active
+                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
+                    : "text-gray-900 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Advanced Features Section */}
+        <div className="mt-6">
+          <div className="flex items-center justify-between px-3 mb-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">Advanced</span>
+          </div>
+          <div className="space-y-1">
+            {advancedNavItems.map((item) => {
+              const Icon = item.icon;
+              const active = isActive(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                    active
+                      ? "bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300"
+                      : "text-gray-900 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
 
         {favorites.length > 0 && (
           <div className="space-y-1">

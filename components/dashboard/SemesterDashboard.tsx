@@ -8,6 +8,12 @@ import { Badge } from "@/components/common/Badge";
 import { Plus, CheckSquare, GraduationCap, ClipboardList } from "lucide-react";
 import { formatDistanceToNow } from "@/lib/utils";
 import { FocusCards } from "@/components/dashboard/FocusCards";
+import { useStudyRuns } from "@/lib/hooks/useStudyRun";
+import { useStudyDebts } from "@/lib/hooks/useStudyDebts";
+import { useBossFights } from "@/lib/hooks/useBossFight";
+import { StudyRunCard } from "@/components/study-runs/StudyRunCard";
+import { DebtCard } from "@/components/study-debts/DebtCard";
+import { BossHealthBar } from "@/components/boss-fights/BossHealthBar";
 
 type WorkspaceSummary = {
   id: string;
@@ -76,6 +82,14 @@ export function SemesterDashboard({
   );
 
   const [liveFocusSessions, setLiveFocusSessions] = useState(initialFocusSessions);
+
+  // Load advanced features data
+  const { list: studyRunsList } = useStudyRuns(workspace.id);
+  const { summary: debtSummary } = useStudyDebts(workspace.id);
+  const { list: bossFightsList } = useBossFights(workspace.id);
+
+  const activeStudyRuns = studyRunsList.data?.filter(r => r.isActive) || [];
+  const activeBosses = bossFightsList.data?.filter((b: any) => b.status === "ALIVE") || [];
 
   // Fetch real study sessions (if API + DB are available)
   useEffect(() => {
@@ -164,6 +178,44 @@ export function SemesterDashboard({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <FocusCards workspaceId={workspace.id} sessions={liveFocusSessions} />
       </div>
+
+      {/* Advanced Features Widgets */}
+      {(activeStudyRuns.length > 0 || (debtSummary.data && debtSummary.data.debtCount > 0) || activeBosses.length > 0) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Active Study Run */}
+          {activeStudyRuns[0] && (
+            <StudyRunCard
+              studyRun={activeStudyRuns[0]}
+              courseName={courses.find((c: any) => c.id === activeStudyRuns[0].courseId)?.code || "Course"}
+              courseColor={courses.find((c: any) => c.id === activeStudyRuns[0].courseId)?.color || "#3B82F6"}
+              workspaceId={workspace.id}
+            />
+          )}
+
+          {/* Study Debt Alert */}
+          {debtSummary.data && debtSummary.data.debtCount > 0 && (
+            <DebtCard
+              totalDebtMinutes={debtSummary.data.totalDebtMinutes}
+              debtCount={debtSummary.data.debtCount}
+              oldestDebtDays={debtSummary.data.oldestDebtDays}
+              workspaceId={workspace.id}
+            />
+          )}
+
+          {/* Active Boss Fights */}
+          {activeBosses.slice(0, 2).map((boss: any) => (
+            <Card key={boss.id} className="p-5">
+              <BossHealthBar
+                name={boss.name}
+                currentHP={boss.currentHP}
+                maxHP={boss.maxHP}
+                status={boss.status}
+                difficulty={boss.difficulty}
+              />
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Main grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
