@@ -30,6 +30,7 @@ type StudyRun = {
   courseId: string;
   goalType: string;
   targetGrade?: string | null;
+  goalDescription?: string | null;
   startDate: Date;
   endDate: Date;
   weeks: Week[];
@@ -50,14 +51,15 @@ export function StudyRunCard({ studyRun, courseName, courseColor = "#3B82F6", wo
     return now >= w.startDate && now <= w.endDate;
   });
 
-  const statusConfig = {
+  const statusConfig: Record<string, { icon: any; color: string; bg: string; label: string }> = {
+    pending: { icon: Minus, color: "text-gray-600", bg: "bg-gray-100", label: "Pending" },
     on_track: { icon: Minus, color: "text-blue-600", bg: "bg-blue-100", label: "On track" },
     ahead: { icon: TrendingUp, color: "text-green-600", bg: "bg-green-100", label: "Ahead" },
     behind: { icon: TrendingDown, color: "text-orange-600", bg: "bg-orange-100", label: "Behind" },
     completed: { icon: Target, color: "text-emerald-600", bg: "bg-emerald-100", label: "Completed" },
   };
 
-  const config = statusConfig[status];
+  const config = statusConfig[status] || statusConfig.pending;
   const StatusIcon = config.icon;
 
   return (

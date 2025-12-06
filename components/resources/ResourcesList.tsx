@@ -143,20 +143,28 @@ export function ResourcesList({ workspaceId, courseId, pageId }: ResourcesListPr
       {/* Add Resource Modal */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add Resource">
         <form onSubmit={handleAddResource} className="space-y-4">
-          <Input
-            label="Title"
-            value={newResource.title}
-            onChange={(e) => setNewResource({ ...newResource, title: e.target.value })}
-            placeholder="Research Paper"
-            required
-          />
+          <div>
+            <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">
+              Title
+            </label>
+            <Input
+              value={newResource.title}
+              onChange={(e) => setNewResource({ ...newResource, title: e.target.value })}
+              placeholder="Research Paper"
+              required
+            />
+          </div>
 
-          <Input
-            label="URL or Path"
-            value={newResource.url}
-            onChange={(e) => setNewResource({ ...newResource, url: e.target.value })}
-            placeholder="https://example.com/paper.pdf"
-          />
+          <div>
+            <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">
+              URL or Path
+            </label>
+            <Input
+              value={newResource.url}
+              onChange={(e) => setNewResource({ ...newResource, url: e.target.value })}
+              placeholder="https://example.com/paper.pdf"
+            />
+          </div>
 
           <div>
             <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">Type</label>

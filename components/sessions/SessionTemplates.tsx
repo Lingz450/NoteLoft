@@ -58,10 +58,12 @@ export function SessionTemplates({ onSelect }: SessionTemplatesProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {templates.map((template) => (
-        <Card
+        <div
           key={template.id}
-          className="p-5 cursor-pointer hover:shadow-lg transition-all border-2 border-transparent hover:border-blue-500"
           onClick={() => onSelect(template)}
+        >
+        <Card
+          className="p-5 cursor-pointer hover:shadow-lg transition-all border-2 border-transparent hover:border-blue-500"
         >
           <div className="flex items-center gap-3 mb-3">
             <div
@@ -91,6 +93,7 @@ export function SessionTemplates({ onSelect }: SessionTemplatesProps) {
             Start Session
           </Button>
         </Card>
+        </div>
       ))}
     </div>
   );

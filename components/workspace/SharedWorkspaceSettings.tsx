@@ -141,13 +141,17 @@ export function SharedWorkspaceSettings({ workspaceId }: SharedWorkspaceSettings
       {/* Invite Modal */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Invite Member">
         <div className="space-y-4">
-          <Input
-            label="Email"
-            type="email"
-            value={inviteEmail}
-            onChange={(e) => setInviteEmail(e.target.value)}
-            placeholder="colleague@example.com"
-          />
+          <div>
+            <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">
+              Email
+            </label>
+            <Input
+              type="email"
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              placeholder="colleague@example.com"
+            />
+          </div>
 
           <div>
             <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">Role</label>

@@ -98,7 +98,7 @@ export async function getTaskRelations(taskId: string) {
           color: true,
         },
       },
-      linkedPage: {
+      relatedPage: {
         select: {
           id: true,
           title: true,

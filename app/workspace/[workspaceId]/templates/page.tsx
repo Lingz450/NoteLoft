@@ -151,13 +151,15 @@ export default function TemplatesPage({ params }: { params: { workspaceId: strin
       {/* Templates Grid */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredTemplates.map((template) => (
-          <Card
+          <div
             key={template.id}
-            className="p-5 hover:shadow-lg transition-all cursor-pointer"
             onClick={() => {
               setSelectedTemplate(template);
               setIsModalOpen(true);
             }}
+          >
+          <Card
+            className="p-5 hover:shadow-lg transition-all cursor-pointer"
           >
             <div className="space-y-4">
               <div className="flex items-start justify-between">
@@ -194,6 +196,7 @@ export default function TemplatesPage({ params }: { params: { workspaceId: strin
               </Button>
             </div>
           </Card>
+          </div>
         ))}
       </div>
 

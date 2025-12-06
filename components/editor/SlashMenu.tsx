@@ -154,7 +154,7 @@ export function SlashMenu({ editor, onSelect, query = "" }: SlashMenuProps) {
       icon: <Info className="w-4 h-4" />,
       keywords: ["info", "callout", "note"],
       action: (editor) => {
-        editor.chain().focus().setCallout("info").run();
+        (editor.chain().focus() as any).setCallout("info").run();
       },
     },
     {
@@ -163,7 +163,7 @@ export function SlashMenu({ editor, onSelect, query = "" }: SlashMenuProps) {
       icon: <AlertCircle className="w-4 h-4" />,
       keywords: ["warning", "alert", "caution"],
       action: (editor) => {
-        editor.chain().focus().setCallout("warning").run();
+        (editor.chain().focus() as any).setCallout("warning").run();
       },
     },
     {
@@ -172,7 +172,7 @@ export function SlashMenu({ editor, onSelect, query = "" }: SlashMenuProps) {
       icon: <CheckCircle className="w-4 h-4" />,
       keywords: ["success", "done", "complete"],
       action: (editor) => {
-        editor.chain().focus().setCallout("success").run();
+        (editor.chain().focus() as any).setCallout("success").run();
       },
     },
     {
@@ -181,7 +181,7 @@ export function SlashMenu({ editor, onSelect, query = "" }: SlashMenuProps) {
       icon: <Lightbulb className="w-4 h-4" />,
       keywords: ["tip", "hint", "help"],
       action: (editor) => {
-        editor.chain().focus().setCallout("tip").run();
+        (editor.chain().focus() as any).setCallout("tip").run();
       },
     },
     {
@@ -190,7 +190,7 @@ export function SlashMenu({ editor, onSelect, query = "" }: SlashMenuProps) {
       icon: <XCircle className="w-4 h-4" />,
       keywords: ["error", "danger", "problem"],
       action: (editor) => {
-        editor.chain().focus().setCallout("error").run();
+        (editor.chain().focus() as any).setCallout("error").run();
       },
     },
     {
@@ -211,7 +211,7 @@ export function SlashMenu({ editor, onSelect, query = "" }: SlashMenuProps) {
       action: (editor) => {
         const url = window.prompt("Enter URL:");
         if (url) {
-          editor.chain().focus().setLink({ href: url }).run();
+          (editor.chain().focus() as any).setLink({ href: url }).run();
         }
       },
     },

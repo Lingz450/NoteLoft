@@ -158,49 +158,69 @@ export default function StudyRunsPage({ params }: { params: { workspaceId: strin
           </div>
 
           {formData.goalType === "A_GRADE" && (
-            <Input
-              label="Target Grade"
-              value={formData.targetGrade}
-              onChange={(e) => setFormData({ ...formData, targetGrade: e.target.value })}
-              placeholder="A"
-            />
+            <div>
+              <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">
+                Target Grade
+              </label>
+              <Input
+                value={formData.targetGrade}
+                onChange={(e) => setFormData({ ...formData, targetGrade: e.target.value })}
+                placeholder="A"
+              />
+            </div>
           )}
 
           <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Start Date"
-              type="date"
-              value={formData.startDate}
-              onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-              required
-            />
-            <Input
-              label="End Date"
-              type="date"
-              value={formData.endDate}
-              onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-              required
-            />
+            <div>
+              <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">
+                Start Date
+              </label>
+              <Input
+                type="date"
+                value={formData.startDate}
+                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">
+                End Date
+              </label>
+              <Input
+                type="date"
+                value={formData.endDate}
+                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                required
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Days per Week"
-              type="number"
-              min="1"
-              max="7"
-              value={formData.preferredDaysPerWeek}
-              onChange={(e) => setFormData({ ...formData, preferredDaysPerWeek: Number(e.target.value) })}
-            />
-            <Input
-              label="Minutes per Session"
-              type="number"
-              min="15"
-              max="180"
-              step="5"
-              value={formData.minutesPerSession}
-              onChange={(e) => setFormData({ ...formData, minutesPerSession: Number(e.target.value) })}
-            />
+            <div>
+              <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">
+                Days per Week
+              </label>
+              <Input
+                type="number"
+                min="1"
+                max="7"
+                value={formData.preferredDaysPerWeek}
+                onChange={(e) => setFormData({ ...formData, preferredDaysPerWeek: Number(e.target.value) })}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">
+                Minutes per Session
+              </label>
+              <Input
+                type="number"
+                min="15"
+                max="180"
+                step="5"
+                value={formData.minutesPerSession}
+                onChange={(e) => setFormData({ ...formData, minutesPerSession: Number(e.target.value) })}
+              />
+            </div>
           </div>
 
           <div className="flex gap-3">

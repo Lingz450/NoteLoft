@@ -124,13 +124,17 @@ export default function FocusRoomsPage({ params }: { params: { workspaceId: stri
       {/* Create Room Modal */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Create Focus Room">
         <form onSubmit={handleCreate} className="space-y-4">
-          <Input
-            label="Room Name"
-            value={roomName}
-            onChange={(e) => setRoomName(e.target.value)}
-            placeholder="Morning Study Squad"
-            required
-          />
+          <div>
+            <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">
+              Room Name
+            </label>
+            <Input
+              value={roomName}
+              onChange={(e) => setRoomName(e.target.value)}
+              placeholder="Morning Study Squad"
+              required
+            />
+          </div>
 
           <div>
             <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">

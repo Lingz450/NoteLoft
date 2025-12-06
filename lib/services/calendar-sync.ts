@@ -39,6 +39,7 @@ export async function syncCalendarEvents(
       data: {
         workspaceId,
         provider,
+        accountEmail: "user@example.com", // TODO: Get from authenticated user
         isActive: true,
       },
     });
@@ -63,7 +64,6 @@ export async function syncCalendarEvents(
           endTime: event.end,
           description: event.description,
           location: event.location,
-          allDay: event.allDay || false,
         },
       });
     } else {
@@ -76,8 +76,6 @@ export async function syncCalendarEvents(
           endTime: event.end,
           description: event.description,
           location: event.location,
-          allDay: event.allDay || false,
-          type: "CLASS", // Default to class, can be changed
         },
       });
     }
@@ -153,12 +151,16 @@ export async function createSlotFromCalendarEvent(
     throw new Error("Event not found");
   }
 
+  // Convert Date to time string (HH:MM format)
+  const startTimeStr = event.startTime.toTimeString().slice(0, 5);
+  const endTimeStr = event.endTime.toTimeString().slice(0, 5);
+  
   // Check if slot already exists
   const existing = await prisma.timetableSlot.findFirst({
     where: {
       workspaceId,
       courseId,
-      startTime: event.startTime,
+      startTime: startTimeStr,
     },
   });
 
@@ -172,8 +174,8 @@ export async function createSlotFromCalendarEvent(
       workspaceId,
       courseId,
       title: event.title,
-      startTime: event.startTime,
-      endTime: event.endTime,
+      startTime: startTimeStr,
+      endTime: endTimeStr,
       dayOfWeek: event.startTime.getDay(),
       type: "LECTURE", // Default, can be changed
     },

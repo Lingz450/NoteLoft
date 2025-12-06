@@ -23,7 +23,6 @@ export async function GET(req: NextRequest) {
         workspaceId,
         title: {
           contains: searchTerm,
-          mode: "insensitive",
         },
       },
       select: {
@@ -40,7 +39,6 @@ export async function GET(req: NextRequest) {
         workspaceId,
         title: {
           contains: searchTerm,
-          mode: "insensitive",
         },
       },
       select: {
@@ -56,8 +54,8 @@ export async function GET(req: NextRequest) {
       where: {
         workspaceId,
         OR: [
-          { name: { contains: searchTerm, mode: "insensitive" } },
-          { code: { contains: searchTerm, mode: "insensitive" } },
+          { name: { contains: searchTerm } },
+          { code: { contains: searchTerm } },
         ],
       },
       select: {
@@ -74,7 +72,6 @@ export async function GET(req: NextRequest) {
         workspaceId,
         title: {
           contains: searchTerm,
-          mode: "insensitive",
         },
       },
       select: {

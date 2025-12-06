@@ -28,7 +28,7 @@ export default function BossFightsPage({ params }: { params: { workspaceId: stri
 
   const bosses = bossList.data || [];
   const exams = examsQuery.data || [];
-  const examsWithoutBoss = exams.filter(e => !bosses.some(b => b.examId === e.id));
+  const examsWithoutBoss = exams.filter(e => !bosses.some((b: { examId: string }) => b.examId === e.id));
 
   const handleCreateBoss = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,9 +39,9 @@ export default function BossFightsPage({ params }: { params: { workspaceId: stri
     setIsModalOpen(false);
   };
 
-  const activeBosses = bosses.filter(b => b.status === "ALIVE");
-  const defeatedBosses = bosses.filter(b => b.status === "DEFEATED");
-  const escapedBosses = bosses.filter(b => b.status === "ESCAPED");
+  const activeBosses = bosses.filter((b: { status: string }) => b.status === "ALIVE");
+  const defeatedBosses = bosses.filter((b: { status: string }) => b.status === "DEFEATED");
+  const escapedBosses = bosses.filter((b: { status: string }) => b.status === "ESCAPED");
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
@@ -72,7 +72,7 @@ export default function BossFightsPage({ params }: { params: { workspaceId: stri
             Active Fights ({activeBosses.length})
           </h2>
           <div className="grid md:grid-cols-2 gap-4">
-            {activeBosses.map(boss => {
+            {activeBosses.map((boss: { id: string; name: string; currentHP: number; maxHP: number; status: string; difficulty: string; exam?: { date: string } }) => {
               const exam = boss.exam;
               return (
                 <Link key={boss.id} href={`/workspace/${workspaceId}/boss-fights/${boss.id}`}>
@@ -107,7 +107,7 @@ export default function BossFightsPage({ params }: { params: { workspaceId: stri
             Defeated ({defeatedBosses.length})
           </h2>
           <div className="grid md:grid-cols-3 gap-3">
-            {defeatedBosses.map(boss => (
+            {defeatedBosses.map((boss: { id: string; name: string }) => (
               <Card key={boss.id} className="p-4 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800">
                 <div className="flex items-center gap-2">
                   <Trophy className="w-5 h-5 text-emerald-600" />

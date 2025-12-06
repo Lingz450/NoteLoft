@@ -124,13 +124,17 @@ export default function TopicsPage({ params }: { params: { workspaceId: string }
       {/* Create Topic Modal */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Create Topic">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            label="Topic Name"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="Vector Spaces"
-            required
-          />
+          <div>
+            <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">
+              Topic Name
+            </label>
+            <Input
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="Vector Spaces"
+              required
+            />
+          </div>
 
           <div>
             <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">

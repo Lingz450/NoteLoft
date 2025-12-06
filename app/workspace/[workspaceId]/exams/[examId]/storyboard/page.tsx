@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { Card } from "@/components/common/Card";
 import { Badge } from "@/components/common/Badge";
+import { Button } from "@/components/common/Button";
 import { CheckSquare, FileQuestion, FileText } from "lucide-react";
 
 export default async function ExamStoryboard({

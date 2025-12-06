@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import { Callout, getCalloutIcon, getCalloutColors, CalloutType } from "@/lib/tiptap-extensions/Callout";
+import { SlashMenu } from "./SlashMenu";
 
 interface BlockEditorProps {
   pageId: string;
@@ -266,28 +267,28 @@ export function BlockEditor({ pageId, initialContent = "", onSave, placeholder }
 
         {/* Callout Buttons */}
         <button
-          onClick={() => editor.chain().focus().setCallout("info").run()}
+          onClick={() => (editor.chain().focus() as any).setCallout("info").run()}
           className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
           title="Info Callout"
         >
           <Info className="w-4 h-4" />
         </button>
         <button
-          onClick={() => editor.chain().focus().setCallout("warning").run()}
+          onClick={() => (editor.chain().focus() as any).setCallout("warning").run()}
           className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
           title="Warning Callout"
         >
           <AlertCircle className="w-4 h-4" />
         </button>
         <button
-          onClick={() => editor.chain().focus().setCallout("success").run()}
+          onClick={() => (editor.chain().focus() as any).setCallout("success").run()}
           className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
           title="Success Callout"
         >
           <CheckCircle className="w-4 h-4" />
         </button>
         <button
-          onClick={() => editor.chain().focus().setCallout("tip").run()}
+          onClick={() => (editor.chain().focus() as any).setCallout("tip").run()}
           className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
           title="Tip Callout"
         >
