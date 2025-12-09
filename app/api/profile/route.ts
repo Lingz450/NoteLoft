@@ -3,6 +3,9 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 
+// Force dynamic rendering to prevent prerendering during build
+export const dynamic = 'force-dynamic';
+
 const profileSchema = z.object({
   name: z.string().min(1, "Name is required").optional(),
   email: z.string().email().optional(),
